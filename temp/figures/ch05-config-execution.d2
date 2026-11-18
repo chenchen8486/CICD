@@ -1,0 +1,24 @@
+direction: right
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 23
+    }
+  }
+}
+a: "仓库配置：\n触发规则、阶段与任务" {class: box}
+b: "CI 平台：\n创建流水线并调度" {class: box}
+c: "Runner：\n准备环境并执行命令" {class: box}
+d: "合并请求：\n展示状态、日志与产物" {class: box}
+a -> b
+b -> c
+c -> d
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(c -> d)[0].style.stroke: "#202020"

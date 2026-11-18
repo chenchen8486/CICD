@@ -1,0 +1,27 @@
+direction: right
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 23
+    }
+  }
+}
+a: "选择失败流水线：\n核对提交与分支" {class: box}
+b: "打开失败任务：\n不先看其他成功任务" {class: box}
+c: "定位第一条有效错误：\n区分原因与连带输出" {class: box}
+d: "本地复现并修复：\n运行相同检查" {class: box}
+e: "推送后复查：\n确认新一轮结果" {class: box}
+a -> b
+b -> c
+c -> d
+d -> e
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(c -> d)[0].style.stroke: "#202020"
+(d -> e)[0].style.stroke: "#202020"

@@ -1,0 +1,52 @@
+shape: sequence_diagram
+classes: {
+  actor: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 24
+    }
+  }
+}
+developer: "代码提交者：\n你" {class: actor}
+platform: "代码平台与 CI：\n保存 PR，Runner 执行检查" {class: actor}
+reviewer: "评审人员：\n检查设计与代码质量" {class: actor}
+merger: "合并负责人：\n拥有合并权限" {class: actor}
+
+developer -> platform: "1 推送功能分支\n并创建 PR/MR"
+platform -> platform: "2 自动执行\n检查与测试"
+platform -> developer: "3 如果检查失败\n反馈失败任务与日志"
+developer -> platform: "4 修复并推送新提交\n回到第 2 步重新检查"
+platform -> reviewer: "5 自动检查通过\n在 PR 中展示结果"
+reviewer -> developer: "6 如果有评审意见\n在 PR 中提出具体问题"
+developer -> platform: "7 修改、回应并推送\n再次接受检查与评审"
+reviewer -> platform: "8 复查通过\n批准 PR/MR"
+platform -> merger: "9 CI 与评审均通过\n满足团队合并条件"
+merger -> platform: "10 执行合并\n代码进入主分支"
+developer -> platform: "11 拉取最新主分支\n准备下一项任务"
+
+(developer -> platform)[0].style.stroke: "#202020"
+(platform -> platform)[0].style.stroke: "#202020"
+(platform -> developer)[0].style.stroke: "#202020"
+(developer -> platform)[1].style.stroke: "#202020"
+(platform -> reviewer)[0].style.stroke: "#202020"
+(reviewer -> developer)[0].style.stroke: "#202020"
+(developer -> platform)[2].style.stroke: "#202020"
+(reviewer -> platform)[0].style.stroke: "#202020"
+(platform -> merger)[0].style.stroke: "#202020"
+(merger -> platform)[0].style.stroke: "#202020"
+(developer -> platform)[3].style.stroke: "#202020"
+
+(developer -> platform)[0].style.font-size: 22
+(platform -> platform)[0].style.font-size: 22
+(platform -> developer)[0].style.font-size: 22
+(developer -> platform)[1].style.font-size: 22
+(platform -> reviewer)[0].style.font-size: 22
+(reviewer -> developer)[0].style.font-size: 22
+(developer -> platform)[2].style.font-size: 22
+(reviewer -> platform)[0].style.font-size: 22
+(platform -> merger)[0].style.font-size: 22
+(merger -> platform)[0].style.font-size: 22
+(developer -> platform)[3].style.font-size: 22

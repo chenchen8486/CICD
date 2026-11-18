@@ -1,0 +1,32 @@
+direction: right
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 23
+    }
+  }
+}
+a: "准备项目：\n功能、测试与配置" {class: box}
+b: "本地验证：\n检查、测试与构建" {class: box}
+c: "功能分支：\n提交并推送" {class: box}
+d: "合并请求：\nCI 检查与团队评审" {class: box}
+e: "修复与复查：\n追加提交直到通过" {class: box}
+f: "合并与交付：\n同步主分支和产物" {class: box}
+a -> b
+b -> c
+c -> d
+d -> e: "有问题"
+e -> d: "重新验证"
+d -> f: "全部通过"
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(c -> d)[0].style.stroke: "#202020"
+(d -> e)[0].style.stroke: "#202020"
+(e -> d)[0].style.stroke: "#202020"
+(d -> f)[0].style.stroke: "#202020"

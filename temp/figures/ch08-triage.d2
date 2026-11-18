@@ -1,0 +1,37 @@
+direction: down
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 23
+    }
+  }
+}
+a: "开始排查：\n先确认分支和提交" {class: box}
+b: "是否创建了流水线？" {class: box}
+b.shape: diamond
+c: "检查触发规则：\n事件、条件与配置" {class: box}
+d: "是否有可用 Runner？" {class: box}
+d.shape: diamond
+e: "检查执行资源：\n在线状态与标签" {class: box}
+f: "读取失败任务日志：\n定位第一条有效错误" {class: box}
+g: "分类修复：\n代码、依赖、数据或环境" {class: box}
+a -> b
+b -> c: "否"
+b -> d: "是"
+c -> a: "修正后重试"
+d -> e: "否"
+d -> f: "是"
+f -> g
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(b -> d)[0].style.stroke: "#202020"
+(c -> a)[0].style.stroke: "#202020"
+(d -> e)[0].style.stroke: "#202020"
+(d -> f)[0].style.stroke: "#202020"
+(f -> g)[0].style.stroke: "#202020"

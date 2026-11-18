@@ -1,0 +1,24 @@
+direction: right
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 23
+    }
+  }
+}
+a: "格式与静态检查：\n秒级发现基础问题" {class: box}
+b: "单元测试：\n验证函数与模块" {class: box}
+c: "集成与冒烟测试：\n验证模块串联" {class: box}
+d: "完整评估：\n定时或手动执行" {class: box}
+a -> b: "由快到慢"
+b -> c
+c -> d
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(c -> d)[0].style.stroke: "#202020"

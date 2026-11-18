@@ -1,0 +1,36 @@
+direction: down
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 23
+    }
+  }
+}
+pipeline: "Pipeline：\n一次完整自动化流程" {class: box}
+check: "检查阶段 Stage：\n代码风格与静态检查" {class: box}
+test: "测试阶段 Stage：\n运行自动化测试" {class: box}
+build: "构建阶段 Stage：\n生成可分发产物" {class: box}
+lint: "格式检查 Job：\n执行 ruff check" {class: box}
+unit: "单元测试 Job：\n执行 pytest" {class: box}
+integration: "集成测试 Job：\n执行集成测试命令" {class: box}
+package: "软件打包 Job：\n生成 wheel 文件" {class: box}
+pipeline -> check: "包含"
+pipeline -> test: "包含"
+pipeline -> build: "包含"
+check -> lint: "包含"
+test -> unit: "包含"
+test -> integration: "包含"
+build -> package: "包含"
+(pipeline -> check)[0].style.stroke: "#202020"
+(pipeline -> test)[0].style.stroke: "#202020"
+(pipeline -> build)[0].style.stroke: "#202020"
+(check -> lint)[0].style.stroke: "#202020"
+(test -> unit)[0].style.stroke: "#202020"
+(test -> integration)[0].style.stroke: "#202020"
+(build -> package)[0].style.stroke: "#202020"

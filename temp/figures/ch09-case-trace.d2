@@ -1,0 +1,33 @@
+direction: right
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 23
+    }
+  }
+}
+a: "同一次提交：\n功能、测试与 CI 配置" {class: box}
+b: "本地验证：\n检查、测试与构建" {class: box}
+c: "创建合并请求：\n确定提交与目标分支" {class: box}
+d: "静态检查 Job：\n返回检查状态" {class: box}
+e: "单元测试 Job：\n生成测试报告" {class: box}
+f: "构建 Job：\n生成软件包" {class: box}
+g: "结果回到合并请求：\n状态、日志与产物" {class: box}
+a -> b
+b -> c
+c -> d
+d -> e
+e -> f
+f -> g
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(c -> d)[0].style.stroke: "#202020"
+(d -> e)[0].style.stroke: "#202020"
+(e -> f)[0].style.stroke: "#202020"
+(f -> g)[0].style.stroke: "#202020"

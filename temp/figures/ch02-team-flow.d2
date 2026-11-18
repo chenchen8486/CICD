@@ -1,0 +1,24 @@
+direction: right
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 24
+    }
+  }
+}
+a: "同步与分支：\n从最新主分支开始" {class: box}
+b: "本地修改：\n代码、测试与小提交" {class: box}
+c: "推送与合并请求：\n说明改动和验证结果" {class: box}
+d: "检查与合并：\nCI 通过后评审合并" {class: box}
+a -> b
+b -> c
+c -> d
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(c -> d)[0].style.stroke: "#202020"

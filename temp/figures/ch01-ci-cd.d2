@@ -1,0 +1,27 @@
+direction: right
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 24
+    }
+  }
+}
+a: "代码改动：\n功能、修复或测试" {class: box}
+b: "持续集成 CI：\n自动检查并验证" {class: box}
+c: "可用产物：\n软件包与测试报告" {class: box}
+d: "持续交付：\n随时可由人发布" {class: box}
+e: "持续部署：\n自动发布到环境" {class: box}
+a -> b
+b -> c
+c -> d: "人工确认"
+c -> e: "自动执行"
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(c -> d)[0].style.stroke: "#202020"
+(c -> e)[0].style.stroke: "#202020"

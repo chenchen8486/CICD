@@ -1,0 +1,27 @@
+direction: right
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 23
+    }
+  }
+}
+a: "功能分支：\n小改动与对应测试" {class: box}
+b: "合并请求：\n说明目的与验证" {class: box}
+c: "合并门禁：\nCI 通过与评审批准" {class: box}
+d: "主分支保护：\n检查未满足则阻止" {class: box}
+e: "合并完成：\n团队共享最新代码" {class: box}
+a -> b
+b -> c
+c -> d: "满足条件"
+d -> e
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(c -> d)[0].style.stroke: "#202020"
+(d -> e)[0].style.stroke: "#202020"

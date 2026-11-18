@@ -1,0 +1,2156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>CI/CD 实用入门｜算法与软件开发者的团队协作手册</title>
+  <script>
+    document.documentElement.classList.add('js');
+    try {
+      const savedTheme = localStorage.getItem('cicd-theme');
+      if (savedTheme === 'light' || savedTheme === 'dark') {
+        document.documentElement.dataset.theme = savedTheme;
+        document.querySelector('meta[name="color-scheme"]').content = savedTheme;
+      }
+    } catch (error) {}
+  </script>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: light-dark(#f5f5f3, #151515);
+      --surface: light-dark(#ffffff, #202020);
+      --text: light-dark(#202020, #e8e8e8);
+      --muted: light-dark(#666666, #aaaaaa);
+      --border: light-dark(#dddddd, #424242);
+      --soft: light-dark(#eeeeec, #2c2c2c);
+      --control-border: light-dark(#bcbcbc, #666666);
+      --inline-code: light-dark(#e9e9e7, #383838);
+      --topbar-bg: light-dark(rgba(245, 245, 243, .96), rgba(21, 21, 21, .96));
+      --sidebar: 286px;
+      --topbar: 58px;
+    }
+    html[data-theme="light"] { color-scheme: light; }
+    html[data-theme="dark"] { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", system-ui, sans-serif;
+      font-size: 16px;
+      line-height: 1.9;
+    }
+    button, a { -webkit-tap-highlight-color: transparent; }
+    a { color: inherit; text-underline-offset: 3px; }
+    button { font: inherit; }
+    :focus-visible { outline: 2px solid #111111; outline-offset: 3px; }
+    .progress {
+      position: fixed;
+      inset: 0 auto auto 0;
+      width: 0;
+      height: 3px;
+      background: #111111;
+      z-index: 100;
+    }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: var(--sidebar);
+      height: 100dvh;
+      overflow-y: auto;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      z-index: 60;
+      transition: transform 180ms ease;
+    }
+    .brand { padding: 26px 24px 22px; border-bottom: 1px solid var(--border); }
+    .brand-title { display: block; font-size: 19px; font-weight: 700; letter-spacing: .02em; }
+    .brand-subtitle { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
+    .chapter-nav { padding: 16px 14px 32px; }
+    .chapter-nav ul { margin: 0; padding: 0; list-style: none; }
+    .chapter-link, .chapter-pending {
+      display: flex;
+      gap: 10px;
+      align-items: baseline;
+      padding: 9px 10px;
+      font-size: 14px;
+      line-height: 1.55;
+    }
+    .chapter-link { border-radius: 4px; text-decoration: none; font-weight: 700; }
+    .chapter-link:hover { background: var(--soft); }
+    .chapter-number { flex: 0 0 26px; color: var(--muted); font-variant-numeric: tabular-nums; }
+    .chapter-pending { color: #888888; }
+    .pending-label { margin-left: auto; font-size: 11px; white-space: nowrap; }
+    .section-nav { margin: 4px 0 14px 36px !important; }
+    .section-nav a {
+      display: block;
+      padding: 5px 8px;
+      border-radius: 3px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      text-decoration: none;
+    }
+    .section-nav a:hover { color: var(--text); background: var(--soft); }
+    .section-nav a.active { color: var(--text); font-weight: 700; text-decoration: underline; }
+    .main { min-height: 100vh; margin-left: var(--sidebar); transition: margin-left 180ms ease; }
+    body.nav-hidden .sidebar { transform: translateX(-100%); }
+    body.nav-hidden .main { margin-left: 0; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      height: var(--topbar);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 0 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--topbar-bg);
+      backdrop-filter: blur(8px);
+    }
+    .nav-toggle, .theme-toggle, .zoom-actions button {
+      padding: 5px 11px;
+      border: 1px solid var(--control-border);
+      border-radius: 4px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .nav-toggle:hover, .theme-toggle:hover, .zoom-actions button:hover { background: var(--soft); }
+    .theme-toggle { margin-left: auto; white-space: nowrap; }
+    .breadcrumb { color: var(--muted); font-size: 13px; }
+    .content { max-width: 900px; margin: 0 auto; padding: 48px 48px 80px; }
+    article { scroll-margin-top: 76px; }
+    h1 { margin: 0 0 12px; font-size: clamp(28px, 4vw, 38px); line-height: 1.35; letter-spacing: -.02em; }
+    h2 { margin: 52px 0 18px; font-size: 24px; line-height: 1.45; scroll-margin-top: 76px; }
+    h3 { margin: 30px 0 12px; font-size: 18px; line-height: 1.5; }
+    p { margin: 0 0 16px; }
+    .subtitle { margin-bottom: 30px; color: var(--muted); font-size: 14px; }
+    .lead { font-size: 18px; line-height: 1.9; }
+    strong { font-weight: 700; }
+    code {
+      padding: 2px 5px;
+      border-radius: 3px;
+      background: var(--inline-code);
+      font-family: Consolas, "SFMono-Regular", monospace;
+      font-size: .9em;
+      overflow-wrap: anywhere;
+    }
+    ul, ol { margin: 12px 0 20px; padding-left: 1.6em; }
+    li { margin-bottom: 7px; }
+    figure { margin: 26px 0 30px; }
+    .svg-frame {
+      position: relative;
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      cursor: zoom-in;
+      scroll-axis-lock: none;
+      overscroll-behavior: contain;
+    }
+    .svg-frame svg { display: block; width: 100%; min-width: 1000px; height: auto; }
+    .image-open {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      background: transparent;
+      cursor: zoom-in;
+    }
+    figcaption { margin-top: 10px; color: var(--muted); font-size: 13px; text-align: center; }
+    .screenshot-frame {
+      position: relative;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #151515;
+      cursor: zoom-in;
+    }
+    .screenshot-frame img { display: block; width: 100%; height: auto; }
+    .screenshot-frame:focus-within { outline: 2px solid var(--text); outline-offset: 3px; }
+    .table-wrap { margin: 22px 0; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; background: var(--surface); font-size: 14px; }
+    th, td { padding: 12px 14px; border: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { background: var(--soft); font-weight: 700; }
+    .code-wrap { position: relative; margin: 22px 0 26px; }
+    pre {
+      margin: 0;
+      padding: 22px;
+      overflow-x: auto;
+      border-radius: 4px;
+      background: #1d1d1d;
+      color: #f4f4f4;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+    pre code { padding: 0; background: transparent; color: inherit; overflow-wrap: normal; }
+    .copy-button {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      padding: 3px 9px;
+      border: 1px solid #777777;
+      border-radius: 3px;
+      background: #333333;
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .copy-button:hover { background: #555555; }
+    .chapter-end { margin-top: 56px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--muted); font-size: 14px; }
+    .backdrop { display: none; }
+    .skip-link { position: fixed; top: -80px; left: 12px; z-index: 120; padding: 8px 12px; background: var(--surface); }
+    .skip-link:focus { top: 12px; }
+    .progress { background: var(--text); }
+    .js :focus-visible { outline-color: var(--text); }
+    .zoom-dialog {
+      width: 96vw;
+      max-width: 1600px;
+      max-height: 92dvh;
+      padding: 0;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+    }
+    .zoom-dialog:modal { overscroll-behavior: contain; }
+    .zoom-dialog::backdrop { background: rgba(0, 0, 0, .72); overscroll-behavior: contain; }
+    .zoom-shell { display: flex; flex-direction: column; }
+    .zoom-header { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 9px 14px; border-bottom: 1px solid var(--border); }
+    .zoom-title { margin: 0; font-size: 15px; }
+    .zoom-actions { display: flex; align-items: center; gap: 7px; margin-left: auto; }
+    .zoom-value { min-width: 48px; color: var(--muted); font-size: 12px; text-align: center; }
+    .zoom-help { margin-left: 8px; color: var(--muted); font-size: 12px; }
+    .zoom-stage {
+      flex: 0 0 auto;
+      overflow: auto;
+      background: #ffffff;
+      scroll-axis-lock: none;
+      overscroll-behavior: none;
+      touch-action: none;
+    }
+    .zoom-stage svg, .zoom-stage img { display: block; max-width: none; height: auto; margin: 0 auto; cursor: grab; }
+    .zoom-stage img { user-select: none; }
+    .zoom-stage.dragging svg, .zoom-stage.dragging img { cursor: grabbing; }
+    @media (max-width: 860px) {
+      .main, body.nav-hidden .main { margin-left: 0; }
+      .js .sidebar, body.nav-hidden .sidebar { transform: translateX(-100%); }
+      .js body.nav-open .sidebar { transform: translateX(0); }
+      .js body.nav-open .backdrop { display: block; position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, .38); }
+      .content { padding: 34px 22px 60px; }
+      .topbar { padding: 0 16px; gap: 8px; }
+      .breadcrumb { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .zoom-help { display: none; }
+      .zoom-header { flex-wrap: wrap; }
+      .zoom-actions { margin-left: auto; }
+      html:not(.js) .sidebar { position: static; width: auto; height: auto; border-right: 0; }
+      html:not(.js) .nav-toggle, html:not(.js) .theme-toggle, html:not(.js) .progress { display: none; }
+    }
+    @media (max-width: 520px) {
+      .breadcrumb { display: none; }
+      .zoom-title { display: none; }
+      .zoom-actions { width: 100%; justify-content: space-between; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .sidebar, .main { transition: none; }
+    }
+    @media print {
+      body { background: #ffffff; font-size: 11pt; }
+      .sidebar, .topbar, .progress, .copy-button, .backdrop, .skip-link, .zoom-dialog { display: none !important; }
+      .main { margin: 0; }
+      .content { max-width: none; padding: 0; }
+      .svg-frame { break-inside: avoid; }
+      .svg-frame svg { min-width: 0; }
+      pre { border: 1px solid #555555; background: #ffffff; color: #000000; white-space: pre-wrap; }
+      a { color: #000000; }
+      h2 { break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#chapter-1">跳到正文</a>
+  <div class="progress" aria-hidden="true"></div>
+  <aside class="sidebar" id="sidebar" aria-label="手册目录">
+    <div class="brand">
+      <span class="brand-title">CI/CD 实用入门</span>
+      <span class="brand-subtitle">算法与软件开发者的团队协作手册</span>
+    </div>
+    <nav class="chapter-nav">
+      <ul>
+        <li>
+          <a class="chapter-link" href="#chapter-1"><span class="chapter-number">01</span><span>CI/CD 能帮你做什么</span></a>
+          <ul class="section-nav" aria-label="第 1 章节目录">
+            <li><a href="#ch01-commit">1.1 从一次代码提交说起</a></li>
+            <li><a href="#ch01-roles">1.2 Git、CI 平台与 Runner 的分工</a></li>
+            <li><a href="#ch01-checks">1.3 团队通常自动检查什么</a></li>
+            <li><a href="#ch01-cd">1.4 CI、持续交付与持续部署</a></li>
+            <li><a href="#ch01-first-yaml">1.5 看一条最小流水线</a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="chapter-link" href="#chapter-2"><span class="chapter-number">02</span><span>从写代码到合并</span></a>
+          <ul class="section-nav" aria-label="第 2 章节目录">
+            <li><a href="#ch02-flow">2.1 一套完整的日常协作流程</a></li>
+            <li><a href="#ch02-branch">2.2 从最新主分支创建功能分支</a></li>
+            <li><a href="#ch02-commit">2.3 本地检查、提交与推送</a></li>
+            <li><a href="#ch02-mr">2.4 发起一个清楚的合并请求</a></li>
+            <li><a href="#ch02-feedback">2.5 处理 CI 与评审意见</a></li>
+            <li><a href="#ch02-merge">2.6 合并之后做什么</a></li>
+            <li><a href="#ch02-collaboration">2.7 一次完整协作：谁负责什么</a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="chapter-link" href="#chapter-3"><span class="chapter-number">03</span><span>CI/CD 核心概念</span></a>
+          <ul class="section-nav" aria-label="第 3 章节目录">
+            <li><a href="#ch03-trigger">3.1 Trigger：流水线为什么启动</a></li>
+            <li><a href="#ch03-hierarchy">3.2 Pipeline、Stage、Job 与 Step</a></li>
+            <li><a href="#ch03-runner">3.3 Runner：任务在哪里执行</a></li>
+            <li><a href="#ch03-artifact-cache">3.4 Artifact 与 Cache：保存结果还是加速</a></li>
+            <li><a href="#ch03-environment">3.5 变量与运行环境</a></li>
+            <li><a href="#ch03-mapping">3.6 把概念对应到一份配置</a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="chapter-link" href="#chapter-4"><span class="chapter-number">04</span><span>团队项目在 CI 中检查什么</span></a>
+          <ul class="section-nav" aria-label="第 4 章节目录">
+            <li><a href="#ch04-layers">4.1 从快速检查到完整评估</a></li>
+            <li><a href="#ch04-static">4.2 格式与静态检查</a></li>
+            <li><a href="#ch04-tests">4.3 单元测试与集成测试</a></li>
+            <li><a href="#ch04-build">4.4 构建与打包</a></li>
+            <li><a href="#ch04-algorithm">4.5 算法项目的专项检查</a></li>
+            <li><a href="#ch04-timing">4.6 怎样安排检查时机</a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="chapter-link" href="#chapter-5"><span class="chapter-number">05</span><span>看懂并修改流水线配置</span></a>
+          <ul class="section-nav" aria-label="第 5 章节目录">
+            <li><a href="#ch05-structure">5.1 先分清配置的层次</a></li>
+            <li><a href="#ch05-rules">5.2 触发条件与 rules</a></li>
+            <li><a href="#ch05-needs">5.3 stages 与 needs</a></li>
+            <li><a href="#ch05-files">5.4 artifacts 与 cache 配置</a></li>
+            <li><a href="#ch05-manual">5.5 手动任务</a></li>
+            <li><a href="#ch05-edit">5.6 安全修改配置</a></li>
+            <li><a href="#ch05-errors">5.7 常见配置错误</a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="chapter-link" href="#chapter-6"><span class="chapter-number">06</span><span>流水线的日常操作</span></a>
+          <ul class="section-nav" aria-label="第 6 章节目录">
+            <li><a href="#ch06-status">6.1 看懂流水线与 Job 状态</a></li>
+            <li><a href="#ch06-logs">6.2 阅读失败日志</a></li>
+            <li><a href="#ch06-fix">6.3 修复后重新验证</a></li>
+            <li><a href="#ch06-retry">6.4 什么时候可以重跑</a></li>
+            <li><a href="#ch06-actions">6.5 产物、手动任务与取消</a></li>
+            <li><a href="#ch06-report">6.6 怎样向同事反馈问题</a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="chapter-link" href="#chapter-7"><span class="chapter-number">07</span><span>多人协作规则与注意事项</span></a>
+          <ul class="section-nav" aria-label="第 7 章节目录">
+            <li><a href="#ch07-protection">7.1 主分支保护与合并门禁</a></li>
+            <li><a href="#ch07-small">7.2 小提交与小合并请求</a></li>
+            <li><a href="#ch07-conflict">7.3 同步主分支与处理冲突</a></li>
+            <li><a href="#ch07-secrets">7.4 密钥与敏感信息</a></li>
+            <li><a href="#ch07-repro">7.5 固定依赖与可重复环境</a></li>
+            <li><a href="#ch07-ownership">7.6 配置评审与故障沟通</a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="chapter-link" href="#chapter-8"><span class="chapter-number">08</span><span>常见问题与排查方法</span></a>
+          <ul class="section-nav" aria-label="第 8 章节目录">
+            <li><a href="#ch08-layers">8.1 先按层级缩小范围</a></li>
+            <li><a href="#ch08-local">8.2 本地通过但 CI 失败</a></li>
+            <li><a href="#ch08-deps">8.3 依赖与模块问题</a></li>
+            <li><a href="#ch08-data-cache">8.4 路径、数据与缓存</a></li>
+            <li><a href="#ch08-trigger-runner">8.5 未触发、等待或缺 Job</a></li>
+            <li><a href="#ch08-flaky-slow">8.6 偶发失败与耗时过长</a></li>
+            <li><a href="#ch08-commands">8.7 实用诊断命令</a></li>
+          </ul>
+        </li>
+        <li>
+          <a class="chapter-link" href="#chapter-9"><span class="chapter-number">09</span><span>完整实战案例</span></a>
+          <ul class="section-nav" aria-label="第 9 章节目录">
+            <li><a href="#ch09-project">9.1 案例目标、角色与项目目录</a></li>
+            <li><a href="#ch09-branch">9.2 创建功能分支</a></li>
+            <li><a href="#ch09-code">9.3 编写功能代码</a></li>
+            <li><a href="#ch09-tests">9.4 编写并理解测试</a></li>
+            <li><a href="#ch09-packaging">9.5 配置依赖与打包</a></li>
+            <li><a href="#ch09-local">9.6 在本地完整验证</a></li>
+            <li><a href="#ch09-yaml">9.7 CI 配置与执行过程</a></li>
+            <li><a href="#ch09-submit">9.8 提交、推送并创建 MR</a></li>
+            <li><a href="#ch09-debug">9.9 经历一次失败与修复</a></li>
+            <li><a href="#ch09-review-merge">9.10 评审、合并与获取结果</a></li>
+            <li><a href="#ch09-checklist">9.11 全链路回顾与操作清单</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+  <div class="backdrop" aria-hidden="true"></div>
+  <dialog class="zoom-dialog" id="zoom-dialog" aria-labelledby="zoom-title" closedby="any">
+    <div class="zoom-shell">
+      <div class="zoom-header">
+        <h2 class="zoom-title" id="zoom-title">图示放大查看</h2>
+        <div class="zoom-actions">
+          <button type="button" id="zoom-out" aria-label="缩小图示">－</button>
+          <span class="zoom-value" id="zoom-value" aria-live="polite">100%</span>
+          <button type="button" id="zoom-in" aria-label="放大图示">＋</button>
+          <button type="button" id="zoom-reset">适应窗口</button>
+          <form method="dialog"><button type="submit" autofocus>关闭</button></form>
+        </div>
+        <span class="zoom-help">滚轮缩放，拖拽平移，Esc 关闭</span>
+      </div>
+      <div class="zoom-stage" id="zoom-stage" tabindex="0" role="region" aria-label="可缩放和拖拽的图示"></div>
+    </div>
+  </dialog>
+  <main class="main" id="main">
+    <header class="topbar">
+      <button class="nav-toggle" type="button" aria-controls="sidebar" aria-expanded="true">收起目录</button>
+      <div class="breadcrumb">CI/CD 实用入门　/　第 1 章</div>
+      <button class="theme-toggle" type="button" aria-pressed="false">深色显示</button>
+    </header>
+    <div class="content">
+      <article id="chapter-1">
+        <h1>第 1 章　先建立整体认识：CI/CD 能帮你做什么</h1>
+        <p class="subtitle">面向算法与软件开发者　·　预计阅读 12 分钟　·　本章只需理解，不要求独立配置</p>
+        <p class="lead">　　你修改了一个数据处理函数，把代码推送到团队仓库。几分钟后，合并请求页面显示：格式检查通过，12 个单元测试通过，软件包构建成功。CI/CD 就在这段等待时间里完成了自动验证。</p>
+        <p>　　本章先回答三个问题：代码提交后发生了什么，Git 与 CI/CD 各自负责什么，以及为什么团队要把这些检查交给机器。读完后，看到团队仓库里的流水线状态，就能理解它与自己的代码改动有什么关系。</p>
+        <ol>
+          <li><strong>1.1 从一次代码提交说起</strong>：认识提交、检查、反馈和修复的闭环。</li>
+          <li><strong>1.2 Git、CI 平台与 Runner 的分工</strong>：弄清每个角色负责什么。</li>
+          <li><strong>1.3 团队通常自动检查什么</strong>：了解格式检查、测试、构建与结果归档。</li>
+          <li><strong>1.4 CI、持续交付与持续部署</strong>：区分自动验证和两种发布方式。</li>
+          <li><strong>1.5 看一条最小流水线</strong>：把概念对应到实际配置。</li>
+        </ol>
+
+        <h2 id="ch01-commit">1.1 从一次代码提交说起</h2>
+        <p>　　假设你正在维护一个 Python 算法项目。你创建了自己的分支，修改数据清洗逻辑，补充了一个测试，然后执行 <code>git push</code>。push 会把本地提交上传到远程仓库，但它本身不会运行测试。仓库托管平台发现新提交后，根据项目里的 CI 配置创建一条流水线，再由 Runner 执行具体命令。</p>
+        <p>　　运行结果会回到分支或合并请求页面。检查失败时，你修改代码并再次推送，新提交会触发新一轮验证。这样就形成了“提交、自动检查、反馈、修复”的闭环。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="代码推送后，Git 仓库保存提交，CI 平台创建流水线，Runner 执行检查、测试和构建，结果返回合并请求，失败后再修改代码。">
+            %%SVG_CI_LOOP%%
+          </div>
+          <figcaption>图 1　一次代码提交触发的 CI 闭环</figcaption>
+        </figure>
+        <p>　　这条链路里最容易混淆的是触发与执行。CI 平台负责接收事件、展示状态、调度任务，Runner 负责运行安装依赖、执行测试等命令。你可以把 CI 平台看作任务看板，把 Runner 看作真正干活的电脑。</p>
+
+        <h2 id="ch01-roles">1.2 Git、CI 平台与 Runner 的分工</h2>
+        <p>　　Git 是版本管理工具，记录谁在什么时候改了什么。GitLab 提供远程仓库、合并请求和 CI/CD 页面。Runner 是独立于网页界面的执行程序，负责运行配置中的命令。本书后续统一以 GitLab 为例，不再在不同平台之间切换。</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的分工表">
+          <table>
+            <thead><tr><th>角色</th><th>主要负责</th><th>你需要关注</th></tr></thead>
+            <tbody>
+              <tr><td>Git</td><td>记录提交、分支和版本历史</td><td>改动是否提交，分支是否正确</td></tr>
+              <tr><td>远程仓库</td><td>保存团队代码，承载分支与合并请求</td><td>代码是否推送成功</td></tr>
+              <tr><td>CI 平台</td><td>接收事件，创建流水线，展示结果</td><td>哪条流水线正在运行</td></tr>
+              <tr><td>Runner</td><td>在机器或容器中执行检查命令</td><td>哪个任务失败，日志里有什么错误</td></tr>
+              <tr><td>你与同事</td><td>修复问题，评审代码，决定是否合并</td><td>结果是否可信，改动是否合理</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>　　因此，“Git 会 CI/CD”这个说法不够准确。Git 提供版本和事件来源，GitLab 读取仓库中的配置并组织自动化。进入项目后，左侧“代码”区域用于文件、分支和 MR，“构建”区域用于流水线、Job 和产物。若只看见一排图标，先点击页面左上角菜单按钮展开侧栏。不同 GitLab 版本可能合并或调整菜单，但功能归属不变。</p>
+
+        <h2 id="ch01-checks">1.3 团队通常自动检查什么</h2>
+        <p>　　CI 的价值在于把重复检查放到每次改动之后。以前可能由某个人合并前手动运行，现在每次推送都能执行同样的命令，团队更容易及时发现是哪次提交引入了问题。</p>
+        <ul>
+          <li><strong>格式与静态检查：</strong>检查代码风格、未使用变量、明显类型错误等问题。</li>
+          <li><strong>单元测试：</strong>验证函数或模块在已知输入下是否得到预期结果。</li>
+          <li><strong>集成测试：</strong>验证多个模块、服务或数据流程能否一起工作。</li>
+          <li><strong>构建与打包：</strong>确认项目能生成可安装、可分发的软件包。</li>
+          <li><strong>保存结果：</strong>归档测试报告、覆盖率报告和构建产物，方便团队查看。</li>
+        </ul>
+        <p>　　算法项目还可以用小数据集做快速冒烟验证。例如，检查预处理流程能否跑完、模型输出形状是否正确、结果中是否出现 NaN。这里的重点是“用较小成本发现明显错误”，不代表每次提交都要完整训练模型。耗时较长的训练与完整评估通常需要单独安排。</p>
+        <p>　　流水线通过只表示已配置的检查通过。测试没有覆盖的逻辑仍可能有错，算法指标是否符合业务要求也需要合适的评估数据。CI 让验证稳定地发生，验证是否充分仍由团队负责。</p>
+
+        <h2 id="ch01-cd">1.4 CI、持续交付与持续部署</h2>
+        <p>　　CI 是 Continuous Integration，中文叫持续集成。开发人员频繁把改动集成到团队代码中，并通过自动构建和测试尽早发现问题。对多数初学者来说，日常接触最多的就是这一部分。</p>
+        <p>　　CD 可能指 Continuous Delivery，也可能指 Continuous Deployment。前者叫持续交付，代码经过验证后保持可发布状态，正式发布由人确认。后者叫持续部署，通过验证的改动会自动发布到目标环境。两者都要求前面的验证可靠，区别在最后的发布动作是否自动执行。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="代码改动先经过持续集成，生成软件包和测试报告。持续交付由人工确认发布，持续部署自动发布到环境。">
+            %%SVG_CI_CD%%
+          </div>
+          <figcaption>图 2　CI 与两种 CD 的关系</figcaption>
+        </figure>
+        <p>　　学习算法或业务代码开发时，不需要一上来就配置自动部署。先让每次提交都完成可靠的检查与测试，再谈发布。很多内部算法项目只需要 CI 和构建产物，根本没有持续部署环节，这也是正常选择。</p>
+
+        <h2 id="ch01-first-yaml">1.5 看一条最小流水线</h2>
+        <p>　　下面是一份 GitLab CI 的简化示例。文件名为 <code>.gitlab-ci.yml</code>，放在仓库根目录。它使用 Python 3.12 环境，安装项目依赖和 pytest，然后运行测试。这里先观察结构，第 5 章会逐行讲解更完整的配置。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制 GitLab CI 示例">复制</button>
+          <pre tabindex="0"><code class="language-yaml">image: python:3.12
+
+test:
+  script:
+    - python -m pip install -r requirements.txt pytest
+    - python -m pytest</code></pre>
+        </div>
+        <p>　　<code>image</code> 指定任务使用的容器镜像，<code>test</code> 是任务名称，<code>script</code> 下面是 Runner 要执行的命令。仓库中存在有效配置、满足触发条件并且有可用 Runner 时，GitLab 就能创建并运行相应流水线。</p>
+        <p>　　如果第二行测试命令返回失败状态，这个任务通常会显示失败，流水线也会把结果反馈给你。点击失败任务可以看到日志。你后续要做的大量工作，就是阅读这些结果并修复对应问题。</p>
+
+        <h2 id="ch01-summary">本章小结</h2>
+        <p>　　现在可以把 CI/CD 看成团队仓库旁的一套自动检查机制。你负责提交清晰的小改动，Git 保存版本，CI 平台组织流程，Runner 执行命令，团队根据结果决定修复、评审或合并。</p>
+        <ul>
+          <li>push 上传提交，CI 配置决定后续自动执行什么。</li>
+          <li>CI 的重点是频繁集成与自动验证，不等于自动发布。</li>
+          <li>持续交付保留人工发布确认，持续部署会自动发布。</li>
+          <li>流水线通过代表已配置检查通过，代码评审和测试设计仍然重要。</li>
+        </ul>
+
+        <div class="chapter-end">第 1 章完。继续阅读 <a href="#chapter-2">第 2 章：从写代码到合并</a>。</div>
+      </article>
+
+      <article id="chapter-2">
+        <h1>第 2 章　日常协作流程：从写代码到合并</h1>
+        <p class="subtitle">面向算法与软件开发者　·　预计阅读 15 分钟　·　本章需要理解并照着操作</p>
+        <p class="lead">　　团队协作的重点不只是把代码推上去，还要让每次改动有清晰边界、有可验证结果，并且能被同事理解和复查。功能分支、合并请求与 CI 共同支撑这个过程。</p>
+        <p>　　本章以一个 Python 算法项目为例，走完从同步主分支到合并代码的完整流程。文中的 <code>main</code> 代表团队默认主分支，如果项目使用 <code>master</code> 或其他名称，替换为实际名称即可。</p>
+        <ol>
+          <li><strong>2.1 一套完整的日常协作流程</strong>：先看懂各环节怎样衔接。</li>
+          <li><strong>2.2 从最新主分支创建功能分支</strong>：给本次改动一个独立边界。</li>
+          <li><strong>2.3 本地检查、提交与推送</strong>：形成可追溯的版本。</li>
+          <li><strong>2.4 发起一个清楚的合并请求</strong>：让机器和同事都能验证改动。</li>
+          <li><strong>2.5 处理 CI 与评审意见</strong>：用新提交完成修复。</li>
+          <li><strong>2.6 合并之后做什么</strong>：同步主分支并整理本地环境。</li>
+          <li><strong>2.7 一次完整协作：谁负责什么</strong>：用角色时序图串起提交、检查、修复与合并。</li>
+        </ol>
+
+        <h2 id="ch02-flow">2.1 一套完整的日常协作流程</h2>
+        <p>　　一次规范的改动通常从最新主分支开始。开发工作在功能分支上完成，本地检查通过后提交并推送，再通过合并请求说明改动。CI 负责重复执行自动检查，评审人员负责判断设计、可读性和潜在风险。两类检查都满足团队要求后，代码才进入主分支。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="团队协作分为四个阶段：从最新主分支创建功能分支，本地修改并测试，推送后创建合并请求，CI 通过并经评审后合并。">
+            %%SVG_TEAM_FLOW%%
+          </div>
+          <figcaption>图 1　从功能分支到主分支的协作流程</figcaption>
+        </figure>
+        <p>　　这条流程不需要每个项目都完全相同。有的团队要求先创建合并请求再运行 CI，有的团队在每次推送时就运行 CI。操作顺序可以调整，核心原则保持一致：改动有边界，结果可验证，合并且有依据。</p>
+
+        <h2 id="ch02-branch">2.2 从最新主分支创建功能分支</h2>
+        <p>　　开始新任务前，先检查工作区是否还有未提交改动，再同步主分支。直接在有未提交改动的工作区切换分支，可能把旧任务带到新任务中，也可能因文件冲突而无法切换。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制创建功能分支命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">git status
+git switch main
+git pull origin main
+git switch -c feature/normalize-input</code></pre>
+        </div>
+        <p>　　下面四行命令按顺序执行，每行对应一个步骤：</p>
+        <ol>
+          <li><code>git status</code>：查看当前分支和未提交改动。先确认工作区状态，再决定是否切换分支。</li>
+          <li><code>git switch main</code>：切换到本地主分支，让后续操作从主分支开始。</li>
+          <li><code>git pull origin main</code>：从远程仓库获取主分支的最新改动，并更新本地主分支。<code>origin</code> 是远程仓库的常用名称。</li>
+          <li><code>git switch -c feature/normalize-input</code>：创建并立即切换到功能分支，接下来的修改会留在这个分支上。</li>
+        </ol>
+        <p>　　分支名应能说明任务，例如 <code>feature/normalize-input</code> 表示输入归一化功能。团队已有命名规范时，优先遵循团队规范。</p>
+        <p>　　功能分支用于隔离本次工作。主分支上的其他改动不会自动进入该分支，因此任务周期较长时，需要按团队习惯定期同步主分支，减少最后合并时的冲突。</p>
+
+        <h2 id="ch02-commit">2.3 本地检查、提交与推送</h2>
+        <p>　　修改代码后，先在本地运行能够覆盖本次改动的检查。算法项目至少要确认相关函数测试通过，涉及数据处理时还应检查空输入、异常值和输出形状。CI 会再次执行团队配置的检查，本地验证可以提前减少无效往返。</p>
+        <p>　　提交前查看变更，确认没有误加临时文件、数据集、模型权重或密钥。一个提交尽量围绕一个明确目的，提交说明直接写出做了什么，例如“修复空输入导致的预处理异常”。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制本地检查与提交命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m pytest
+git status
+git diff
+git add src/preprocess.py tests/test_preprocess.py
+git commit -m "修复空输入导致的预处理异常"
+git push -u origin feature/normalize-input</code></pre>
+        </div>
+        <ol>
+          <li><code>python -m pytest</code>：先运行项目测试，确认代码行为符合预期。测试失败时先修复，不要继续提交。</li>
+          <li><code>git status</code>：查看哪些文件被修改、哪些已暂存、哪些还未被 Git 管理，防止漏交或误交文件。</li>
+          <li><code>git diff</code>：查看尚未暂存的具体代码差异，逐处确认本次修改是否符合预期。</li>
+          <li><code>git add src/preprocess.py tests/test_preprocess.py</code>：只把这两个文件放入暂存区。暂存区保存准备纳入下一次提交的改动。</li>
+          <li><code>git commit -m "修复空输入导致的预处理异常"</code>：把暂存的改动记录为一个本地提交，<code>-m</code> 后面的文字是提交说明。</li>
+          <li><code>git push -u origin feature/normalize-input</code>：把本地功能分支推送到远程仓库。<code>-u</code> 会记录本地与远程分支的对应关系，后续通常只需执行 <code>git push</code>。</li>
+        </ol>
+
+        <h2 id="ch02-mr">2.4 发起一个清楚的合并请求</h2>
+        <p>　　推送后，在 GitLab 创建 Merge Request，在 GitHub 创建 Pull Request。它们都用于把源分支的改动合并到目标分支。源分支选择刚推送的功能分支，目标分支通常是主分支。</p>
+        <p>　　PR 是 Pull Request 的缩写，MR 是 Merge Request 的缩写。两种名称对应的协作动作基本一致：请求把源分支合并到目标分支，并在合并前完成 CI 检查和代码评审。本手册后续统一使用 GitLab 的 MR 叫法。</p>
+        <h3>在 GitLab 页面中创建 MR</h3>
+        <p>　　先登录公司 GitLab，进入团队项目。在左侧菜单选择“代码 &gt; 合并请求”，英文界面是 <code>Code &gt; Merge requests</code>。页面列出开放中、已合并和已关闭的 MR，点击标题可以进入详情。</p>
+        <figure>
+          <div class="screenshot-frame">
+            <img class="gitlab-screenshot" src="%%GITLAB_MR_LIST%%" alt="GitLab 公开项目的真实合并请求列表，顶部有开放中、已合并、已关闭和全部标签，下方每一行是一条合并请求。" width="1100" height="1340" loading="lazy">
+          </div>
+          <figcaption>实景图：GitLab.com 公开项目的 MR 列表。公开项目未登录时不显示创建按钮。</figcaption>
+        </figure>
+        <ol>
+          <li>在自己有权限的团队项目中，点击右上角“新建合并请求”或 <code>New merge request</code>。</li>
+          <li><code>Source branch</code> 选择 <code>feature/normalize-input</code>，<code>Target branch</code> 选择 <code>main</code>。这里决定代码从哪里来、要合并到哪里，不要选反。</li>
+          <li>点击 <code>Compare branches and continue</code>，填写标题和说明。标题直接写改动，例如“修复空输入导致的预处理异常”。</li>
+          <li>按团队要求选择评审人 <code>Reviewer</code> 和负责人 <code>Assignee</code>。评审人负责提出意见，负责人通常跟踪本次改动，具体分工以团队约定为准。</li>
+          <li>点击 <code>Create merge request</code>。进入详情页后查看流水线状态、代码差异和讨论，不需要另建一个 MR 来接收后续修复。</li>
+        </ol>
+        <p>　　如果找不到创建按钮，先确认是否登录、是否进入了自己的项目而不是只读公开页面，再确认账号是否有项目权限。界面名称可能随 GitLab 版本略有变化，但入口都在项目的合并请求区域。</p>
+        <h3>MR 说明写什么</h3>
+        <p>　　一个便于评审的合并请求，应让同事不看代码也能知道改动的目的和验证情况。正文至少写清以下内容：</p>
+        <ul>
+          <li><strong>改动内容：</strong>修改了哪些函数、配置或测试。</li>
+          <li><strong>改动原因：</strong>解决什么缺陷或满足什么需求。</li>
+          <li><strong>验证方式：</strong>运行了哪些测试，覆盖了哪些关键输入。</li>
+          <li><strong>注意事项：</strong>是否影响数据格式、接口、依赖或后续工作。</li>
+        </ul>
+        <p>　　合并请求创建后，团队成员看到的就是同一份代码、同一条 CI 结果和同一组讨论记录。需要补充说明时，优先写在合并请求中，避免重要结论只留在私人聊天里。</p>
+
+        <h2 id="ch02-feedback">2.5 处理 CI 与评审意见</h2>
+        <p>　　CI 失败时，先打开失败任务，找到第一条有效错误，判断是代码问题、测试问题还是运行环境问题。能在本地复现时，先修复并重新运行相同检查。确认修复后，在正常功能分支上产生一个新提交并推送，流水线会基于最新提交重新验证。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制修复后再次推送命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m pytest
+git add src/preprocess.py
+git commit -m "补充空列表的分支处理"
+git push</code></pre>
+        </div>
+        <ol>
+          <li><code>python -m pytest</code>：修复代码后重新运行测试，先在自己的电脑上确认原问题已经解决。</li>
+          <li><code>git add src/preprocess.py</code>：把这次修复的文件放入暂存区，准备形成新的提交。若还改了测试或其他文件，也要检查并添加对应文件。</li>
+          <li><code>git commit -m "补充空列表的分支处理"</code>：为这次修复创建本地提交。提交说明直接写出补充了什么处理。</li>
+          <li><code>git push</code>：把新提交推送到已有远程功能分支。推送后，团队可以在合并请求中查看修复和新一轮 CI 结果。</li>
+        </ol>
+        <p>　　这四行构成“本地验证、选择改动、创建提交、推送复查”的修复流程。第一次提交后发现问题，不需要删除原合并请求，在同一功能分支追加提交即可。</p>
+        <p>　　评审意见需要逐条回应。接受意见就修改代码，存在不同判断就结合具体场景说明理由。修复后标记对应讨论已解决，便于评审人员确认。不要为了让历史看起来整洁而随意强推公共分支，需要改写已推送历史时，先确认团队规则。</p>
+        <p>　　CI 通过与评审通过解决的问题不同。CI 能证明配置的命令执行成功，评审人员还会检查测试是否有效、算法逻辑是否合理、改动是否影响其他模块。两者不能互相替代。</p>
+
+        <h2 id="ch02-merge">2.6 合并之后做什么</h2>
+        <p>　　达到团队的合并条件后，再执行合并。合并方式可能包括普通合并、压缩合并或变基后合并，具体选择由团队仓库规则决定。不要在不了解团队历史规范时自行更改。</p>
+        <p>　　合并完成后，本地工作区仍停留在旧功能分支。切回主分支并拉取最新代码，确认刚才的改动已经进入主分支。已经不再需要的本地和远程功能分支，可以按团队习惯删除。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制合并后同步命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">git switch main
+git pull origin main
+git branch -d feature/normalize-input</code></pre>
+        </div>
+        <ol>
+          <li><code>git switch main</code>：从已经完成工作的功能分支切回本地主分支。</li>
+          <li><code>git pull origin main</code>：获取远程主分支的最新状态，把刚合并的改动同步到本地。</li>
+          <li><code>git branch -d feature/normalize-input</code>：删除不再需要的本地功能分支。如果分支尚未合并，Git 通常会拒绝删除。这里不会删除远程分支，不要为了绕过保护而随意使用强制删除。</li>
+        </ol>
+
+        <h2 id="ch02-collaboration">2.7 一次完整协作：谁负责什么</h2>
+        <p>　　前面分别介绍了操作命令，本节把角色和动作串成一条完整链路。代码提交者负责发起改动并修复问题，CI 平台负责自动检查，评审人员负责判断设计与代码质量，有合并权限的人负责最终合并。</p>
+        <p>　　PR/MR 是团队共享的协作页面，不是单独发给某一位同事的消息。下图从上往下按时间阅读，数字表示一个典型的执行顺序。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="代码提交者推送分支并创建 PR 或 MR，CI 平台通过 Runner 自动检查和测试。失败结果反馈给提交者，提交者修复后再次推送。自动检查通过后，评审人员提出意见或批准，满足团队条件后由有权限的人合并，提交者最后同步主分支。">
+            %%SVG_COLLABORATION%%
+          </div>
+          <figcaption>图 2　从创建 PR/MR 到合并的完整角色协作链路</figcaption>
+        </figure>
+        <p>　　以“修复空输入导致的预处理异常”为例。你在自己的功能分支提交代码，推送后创建 PR/MR，目标分支选择 <code>main</code>。到这里，你完成了改动的发起，后续不需要把代码单独发给同事手动测试。</p>
+        <p>　　PR/MR 创建或更新后，满足触发条件时，CI 平台创建流水线，Runner 自动执行格式检查和 pytest 等命令。评审人员不需要替你运行这些测试，你们查看的是同一份代码和同一组检查结果。</p>
+        <p>　　如果空输入测试失败，平台会在 PR/MR 中显示失败状态。你打开失败 Job 的日志，修改代码并推送新提交，原 PR/MR 会更新，CI 重新检查。这是图中第 3、4 步，可以重复多次。若原因是 Runner 故障或权限不足，再把失败任务链接和关键日志提供给负责流水线或环境维护的同事。</p>
+        <p>　　自动检查通过后，评审人员检查算法逻辑、接口影响和测试是否有效。如果有意见，对方在 PR/MR 中提出问题，你修改、回应并推送，再次接受检查和评审。对应图中的第 6、7 步，也可以重复。</p>
+        <p>　　当 CI 与评审都满足团队要求后，有权限的人执行合并。评审人员和合并负责人可能是同一位同事，也可能不同，取决于团队规则。合并后，你同步主分支，再开始下一项任务。</p>
+
+        <h2 id="ch02-summary">本章小结</h2>
+        <p>　　日常协作可以固定为一条简单路径：同步主分支，创建功能分支，本地修改与检查，提交并推送，创建合并请求，处理 CI 和评审结果，最后合并并同步主分支。</p>
+        <ul>
+          <li>本地验证用于尽早发现问题，CI 用于在团队环境中重复验证。</li>
+          <li>提交说明和合并请求说明都应让同事快速理解改动。</li>
+          <li>修复 CI 或评审问题时，在正常功能分支上追加提交并推送。</li>
+          <li>合并后同步主分支，再开始下一个任务。</li>
+        </ul>
+        <div class="chapter-end">第 2 章完。继续阅读 <a href="#chapter-3">第 3 章：CI/CD 核心概念</a>。</div>
+      </article>
+
+      <article id="chapter-3">
+        <h1>第 3 章　必须掌握的 CI/CD 核心概念</h1>
+        <p class="subtitle">面向算法与软件开发者　·　预计阅读 15 分钟　·　目标是看懂团队流水线</p>
+        <p class="lead">　　流水线页面上的 Pipeline、Job、Runner 等名词，描述的是同一件事的不同层级：为什么启动，任务怎样分组，命令在哪里运行，生成的文件如何保存。</p>
+        <p>　　本章把这些概念放进一个 Python 项目中解释。读完之后，看到一条流水线时，应能说出它由哪些任务组成、任务由谁执行，以及失败日志和生成文件分别在哪里。</p>
+        <ol>
+          <li><strong>3.1 Trigger：流水线为什么启动</strong>：认识推送、合并请求、手动和定时触发。</li>
+          <li><strong>3.2 Pipeline、Stage、Job 与 Step</strong>：理解流程的层级关系。</li>
+          <li><strong>3.3 Runner：任务在哪里执行</strong>：理解执行环境和任务隔离。</li>
+          <li><strong>3.4 Artifact 与 Cache</strong>：区分结果保存与依赖缓存。</li>
+          <li><strong>3.5 变量与运行环境</strong>：理解配置输入和环境边界。</li>
+          <li><strong>3.6 把概念对应到一份配置</strong>：在 YAML 中找到本章概念。</li>
+        </ol>
+
+        <h2 id="ch03-trigger">3.1 Trigger：流水线为什么启动</h2>
+        <p>　　Trigger 中文是触发条件，回答“发生什么事件时创建一条流水线”。常见来源包括推送分支、创建或更新合并请求、手动点击运行、定时计划以及创建版本标签。团队通过触发规则决定哪些事件需要自动检查。</p>
+        <p>　　版本标签的英文是 Tag。它是 Git 给某个提交添加的固定标记，例如 <code>v1.2.0</code>，常用于标识准备发布的版本。分支会随着新提交向前移动，标签通常固定指向一个提交。</p>
+        <ul>
+          <li><strong>推送触发：</strong>功能分支每次推送后运行快速检查和单元测试。</li>
+          <li><strong>合并请求触发：</strong>重点验证准备进入主分支的改动。</li>
+          <li><strong>手动触发：</strong>执行耗时评估、构建候选版本等需要人工决定何时启动的任务。</li>
+          <li><strong>定时触发：</strong>每天运行完整测试或耗时较长的算法回归评估。</li>
+        </ul>
+        <p>　　算法回归评估是用固定数据和评价指标检查新旧版本，确认改动没有让已有效果变差。用作比较基准的旧结果叫基线，例如准确率、召回率或耗时。回归评估关注“改动前后有没有退化”，不等同于重新训练模型。</p>
+        <p>　　触发只决定何时创建流程，不决定流程里具体执行什么。具体任务由仓库中的 CI 配置定义，部分任务还可能附带额外条件，因此流水线启动不代表所有 Job 都会运行。</p>
+
+        <h2 id="ch03-hierarchy">3.2 Pipeline、Stage、Job 与 Step</h2>
+        <p>　　Pipeline 是流水线，表示一次完整的自动化运行。满足触发条件时，一次推送可以产生一条新的流水线，里面可以有多个任务。Stage 是阶段，用于安排任务顺序，例如先检查、再测试、最后构建。</p>
+        <p>　　Job 是一项独立任务，例如单元测试。Step 是 Job 内按顺序执行的一步，在 GitLab 中通常体现为 <code>script</code> 列表的一项，在 GitHub Actions 中对应 <code>steps</code> 中的一项。Job 有独立的状态和日志，Step 是组成 Job 的具体动作。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="Pipeline 包含检查、测试和构建三个阶段。检查阶段包含格式检查 Job，测试阶段包含单元测试和集成测试 Job，构建阶段包含软件打包 Job。">
+            %%SVG_PIPELINE_TREE%%
+          </div>
+          <figcaption>图 1　Pipeline、Stage 与 Job 的层级关系</figcaption>
+        </figure>
+        <p>　　并行表示多个 Job 同时运行，不必依次排队。例如单元测试和集成测试互不依赖，就可以并行缩短等待时间，前提是 Runner 资源足够。GitLab 的常规阶段模式中，后续阶段默认等待前一阶段的 Job 完成。</p>
+        <p>　　<code>needs</code> 用来明确指定“当前 Job 依赖哪些前置 Job”，可以让有依赖关系的任务更精确地衔接，第 5 章再展开。</p>
+        <p>　　查看失败时，先定位 Pipeline，再定位失败 Job，最后阅读 Job 日志中的具体命令。这个顺序比从流水线首页猜测原因更有效。</p>
+
+        <h2 id="ch03-runner">3.3 Runner：任务在哪里执行</h2>
+        <p>　　Runner 是安装在机器上、接收并执行 CI 任务的程序。CI 平台负责分配 Job，Runner 负责拉取代码、准备环境、执行命令并回传状态和日志。GitHub Actions 中也叫 Runner，Jenkins 中常见的对应概念是 Agent。</p>
+        <p>　　Runner 可以使用容器提供相对独立的运行环境。容器可以理解为隔离出来的一套运行空间，容器镜像则是创建这个空间的模板。镜像中预先装有操作系统组件和工具，但不等于你的完整项目环境。</p>
+        <p>　　<code>image: python:3.12</code> 表示使用带 Python 3.12 的镜像。项目依赖仍需按配置安装。不同 Job 可能由不同 Runner 或容器执行，因此不能默认前一个 Job 留在工作目录里的临时文件一定会出现在下一个 Job 中。</p>
+        <p>　　自托管 Runner 指团队自己准备和维护的执行机器，常用于访问内网数据或使用 GPU 等特定硬件。平台托管的 Runner 则由平台准备。Runner 是否在线、是否接受该项目任务、是否具备所需工具，会直接影响流水线能否启动。</p>
+
+        <h2 id="ch03-artifact-cache">3.4 Artifact 与 Cache：保存结果还是加速</h2>
+        <p>　　Artifact 中文叫任务产物，指本次运行生成、需要保留的文件，例如测试报告和构建包。Cache 中文叫缓存，用于保存可重新获取的依赖文件，减少下一次安装的等待时间。缓存丢了通常可以重建，产物丢了则可能需要重新运行任务。</p>
+        <p>　　wheel 是 Python 的一种软件包格式，文件后缀为 <code>.whl</code>，可供其他人安装。pip 是 Python 常用的包安装工具，npm 常用于 JavaScript 项目的包管理。理解用途即可，本章不要求掌握这些工具的打包细节。</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的产物与缓存对照表">
+          <table>
+            <thead><tr><th>对比项</th><th>Artifact</th><th>Cache</th></tr></thead>
+            <tbody>
+              <tr><td>主要目的</td><td>保存本次运行的结果</td><td>复用依赖，提升速度</td></tr>
+              <tr><td>常见内容</td><td>测试报告、构建产物、日志</td><td>pip、npm 等依赖缓存</td></tr>
+              <tr><td>是否属于交付结果</td><td>是</td><td>否</td></tr>
+              <tr><td>丢失后的影响</td><td>无法下载或传递该结果</td><td>重新下载依赖，通常仍可完成</td></tr>
+              <tr><td>能否当作可靠数据源</td><td>可以按团队保存策略使用</td><td>不可以，缓存不保证始终存在</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>　　不要从缓存目录读取构建结果或测试报告。缓存可能失效、被清除或由不同 Runner 分别保存。需要明确传递的结果应使用 Artifact 或团队规定的制品库。制品库是集中保存软件包等交付文件的服务，便于长期管理和复用。</p>
+
+        <h2 id="ch03-environment">3.5 变量与运行环境</h2>
+        <p>　　CI 变量用于向任务传入配置，例如测试数据目录、报告文件名或运行模式。把变化的信息放进变量，可以避免为了换目录或模式而修改代码。GitLab 会预先生成一些变量，称为预定义变量，项目也可以定义自己的变量。</p>
+        <p>　　<code>CI_COMMIT_SHA</code> 表示本次提交的 SHA，也就是 Git 为提交生成的唯一标识字符串，界面常只显示前几位。<code>CI_PIPELINE_ID</code> 表示流水线编号，用于区分不同的运行记录。</p>
+        <p>　　运行环境指代码运行时依赖的机器、操作系统、软件版本、网络权限和配置。开发环境用于写代码，测试环境用于验证，生产环境则面向实际业务或用户。这些环境可以使用不同的地址和权限。</p>
+        <p>　　CI 的 Runner 环境与个人电脑可能不同。本地已经安装的包、存在的文件和设置的变量不会自动出现在 CI 中，这也是“本地通过、CI 失败”的常见原因。</p>
+        <p>　　密码、访问令牌和私钥都是敏感凭证，应放入平台提供的受保护变量或密钥管理功能，不写进仓库中的 YAML。受保护变量通常只对符合平台规则的分支或标签开放，具体范围由团队配置。任务能否访问内网数据，也取决于网络和权限设置。</p>
+
+        <h2 id="ch03-mapping">3.6 把概念对应到一份配置</h2>
+        <p>　　下面的 GitLab CI 示例把本章概念放在一起。YAML 是一种常用配置文本格式，通过缩进和“键: 值”表达结构。YAML 使用空格缩进，不用 Tab。同级配置要保持相同缩进。</p>
+        <p>　　示例包含检查、测试、构建三个阶段，使用 Python 3.12 镜像，缓存 pip 文件，保存测试报告和构建包。这里先理解各配置块的作用，第 5 章再逐项修改。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制第 3 章 GitLab CI 示例">复制</button>
+          <pre tabindex="0"><code class="language-yaml">stages: [check, test, build]
+
+default:
+  image: python:3.12
+  before_script:
+    - python -m pip install -r requirements.txt ruff pytest build
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  key:
+    files: [requirements.txt]
+  paths: [.cache/pip]
+
+lint:
+  stage: check
+  script:
+    - python -m ruff check .
+
+unit_test:
+  stage: test
+  script:
+    - python -m pytest --junitxml=report.xml
+  artifacts:
+    when: always
+    paths: [report.xml]
+    reports:
+      junit: report.xml
+
+package:
+  stage: build
+  script:
+    - python -m build
+  artifacts:
+    paths: [dist/]</code></pre>
+        </div>
+        <p>　　<code>stages</code> 声明三个阶段的顺序。<code>default</code> 为 Job 提供共同默认值，<code>before_script</code> 中的命令会在每个 Job 的 <code>script</code> 之前执行，这里用于安装依赖和工具。</p>
+        <p>　　<code>variables</code> 定义所有 Job 可用的变量。<code>PIP_CACHE_DIR</code> 告诉 pip 把缓存写入哪个目录，<code>CI_PROJECT_DIR</code> 是 GitLab 提供的项目目录。这里让 pip 的实际缓存目录与下面声明的保存目录保持一致。</p>
+        <p>　　<code>cache.paths</code> 指定要缓存的目录。<code>key.files</code> 让缓存标识随 <code>requirements.txt</code> 的内容变化，依赖清单变化后可以使用新的缓存，避免一直复用旧内容。</p>
+        <p>　　<code>lint</code>、<code>unit_test</code> 和 <code>package</code> 都是自定义的 Job 名称。<code>stage: check</code> 等字段把 Job 放入前面声明的阶段。Ruff 是 Python 静态检查工具，可以发现未使用的导入等问题，命令末尾的点表示检查当前目录。</p>
+        <p>　　<code>--junitxml=report.xml</code> 让 pytest 额外生成 JUnit XML 报告。XML 是记录结构化数据的文本格式，JUnit XML 则约定怎样记录测试通过和失败的信息，便于 CI 平台展示。<code>when: always</code> 表示成功或失败都保存报告。</p>
+        <p>　　<code>python -m build</code> 调用 Python 的构建工具生成软件包，<code>dist/</code> 是默认输出目录，<code>artifacts.paths</code> 指定把其中的文件保存为 Artifact。实际项目还需要相应的 Python 打包配置，第 9 章会结合完整项目说明。</p>
+        <p>　　这份示例没有显式编写触发规则，实际触发行为会受到平台默认规则、项目现有配置和分支条件影响。修改团队流水线前，先阅读已有配置，不要直接覆盖。</p>
+
+        <h2 id="ch03-summary">本章小结</h2>
+        <p>　　Trigger 决定何时启动，Pipeline 组织本次流程，Stage 划分阶段，Job 执行具体任务，Runner 提供运行环境，Artifact 保存结果，Cache 加速依赖复用。变量与环境配置则为任务提供输入和边界。</p>
+        <ul>
+          <li>排查失败时，按 Pipeline、Job、具体命令逐层定位。</li>
+          <li>不要假设不同 Job 一定共享同一台机器和临时目录。</li>
+          <li>需要保存和传递的结果用 Artifact，依赖加速用 Cache。</li>
+          <li>密钥不写入仓库，运行环境差异要在配置中明确处理。</li>
+        </ul>
+        <div class="chapter-end">第 3 章完。继续阅读 <a href="#chapter-4">第 4 章：团队项目在 CI 中检查什么</a>。</div>
+      </article>
+
+      <article id="chapter-4">
+        <h1>第 4 章　团队项目在 CI 中检查什么</h1>
+        <p class="subtitle">面向算法与软件开发者　·　预计阅读 16 分钟　·　目标是理解检查内容并会运行</p>
+        <p class="lead">　　CI 只会执行团队提前配置的检查。测试文件、检查规则和构建命令由团队准备，Runner 负责重复执行，不会自动理解算法是否正确。</p>
+        <p>　　本章介绍常见的检查类型，以及它们适合发现的问题。你不需要一次配齐所有检查，先理解项目已有的命令，再逐步补充有效验证。</p>
+        <ol>
+          <li><strong>4.1 从快速检查到完整评估</strong>：按成本和覆盖范围分层。</li>
+          <li><strong>4.2 格式与静态检查</strong>：不运行完整业务也能发现基础问题。</li>
+          <li><strong>4.3 单元测试与集成测试</strong>：分别验证局部和协作行为。</li>
+          <li><strong>4.4 构建与打包</strong>：确认项目能形成交付物。</li>
+          <li><strong>4.5 算法项目的专项检查</strong>：检查形状、数值与指标。</li>
+          <li><strong>4.6 怎样安排检查时机</strong>：平衡反馈速度和运行成本。</li>
+        </ol>
+
+        <h2 id="ch04-layers">4.1 从快速检查到完整评估</h2>
+        <p>　　静态检查主要分析代码文本和结构，单元测试验证一个函数或模块，集成测试验证多个部分能否协作，构建检查项目能否打包。算法项目还可能用固定数据评估准确率、召回率或耗时。</p>
+        <p>　　这些检查不是互相替代的关系。格式正确不代表逻辑正确，单元测试通过也不代表完整数据流程一定正常。团队通常把便宜、快速的检查放在每次提交时，把耗时任务放到定时或手动流程。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="检查从快到慢分为格式与静态检查、单元测试、集成与冒烟测试、完整评估。快速检查频繁运行，完整评估定时或手动运行。">
+            %%SVG_CHECK_LAYERS%%
+          </div>
+          <figcaption>图 1　检查类型与常见执行节奏</figcaption>
+        </figure>
+
+        <h2 id="ch04-static">4.2 格式与静态检查</h2>
+        <p>　　格式检查关注缩进、空格和排版是否一致，静态检查还能发现未使用的导入、未定义名称等问题。Ruff 是 Python 常用的检查工具，下面的命令需要先安装 Ruff，CI 中也必须包含安装步骤。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制静态检查命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m ruff check .
+python -m ruff format --check .</code></pre>
+        </div>
+        <ol>
+          <li><code>python -m ruff check .</code>：检查当前目录的 Python 代码，发现规则命中的问题时返回失败状态。</li>
+          <li><code>python -m ruff format --check .</code>：只检查格式是否一致，不修改文件。加上 <code>--check</code> 后，它适合用于 CI 验证。</li>
+        </ol>
+        <p>　　格式化与静态检查的目标不同。格式化统一代码外观，静态检查寻找潜在错误。团队选择哪些规则，应写在项目配置中，避免每个人本地使用不同标准。</p>
+
+        <h2 id="ch04-tests">4.3 单元测试与集成测试</h2>
+        <p>　　单元测试用已知输入验证一个小单元的输出，例如归一化函数是否返回正确比例。集成测试把多个真实模块连起来，例如读取数据、预处理、推理和保存结果能否依次完成。</p>
+        <p>　　pytest 是测试运行工具，不是测试文件本身。开发人员把测试写在 <code>test_*.py</code> 等文件中，pytest 按发现规则收集并执行。下面的命令展示两种常见运行范围：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制 pytest 运行命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m pytest tests/test_preprocess.py
+python -m pytest tests/ -k normalize</code></pre>
+        </div>
+        <ol>
+          <li><code>python -m pytest tests/test_preprocess.py</code>：只运行预处理测试文件，适合修改某个模块后快速验证。</li>
+          <li><code>python -m pytest tests/ -k normalize</code>：在测试目录中选择名称包含 <code>normalize</code> 的测试，<code>-k</code> 是 pytest 的名称筛选参数。</li>
+        </ol>
+        <p>　　测试中的固定输入和预期结果叫测试夹具或测试样例，英文常写 fixture。fixture 也可以包括临时目录、模拟对象等准备工作。它的作用是让每次测试从可重复的条件开始。</p>
+
+        <h2 id="ch04-build">4.4 构建与打包</h2>
+        <p>　　构建把源代码和元数据转换成可安装、可分发的结果。Python 项目常生成 wheel 和 sdist。wheel 用于安装，sdist 是源代码发行包，通常以 <code>.tar.gz</code> 结尾。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制 Python 构建命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m build</code></pre>
+        </div>
+        <p>　　这行命令调用 Python 的 <code>build</code> 工具读取项目打包配置，默认把结果写入 <code>dist/</code>。只有命令成功还不够，团队还可以检查包内是否漏文件，并在干净环境中试安装。</p>
+        <p>　　构建产物通常保存为 Artifact，供后续任务或发布流程使用。构建配置、依赖清单和测试文件都应随代码一起评审，避免只修改功能而漏掉交付配置。</p>
+
+        <h2 id="ch04-algorithm">4.5 算法项目的专项检查</h2>
+        <p>　　算法项目除了普通单元测试，还常用小数据集做冒烟测试。冒烟测试指用较小输入走通关键流程，尽早发现崩溃、接口不接或明显输出异常，不代表完整评估模型效果。</p>
+        <p>　　下面的测试检查归一化输出的长度、数值有效性和总和。它对应第 9 章的完整项目：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制算法输出检查示例">复制</button>
+          <pre tabindex="0"><code class="language-python">import math
+
+from algorithm_demo.preprocess import normalize
+
+
+def test_normalize_output():
+    result = normalize([1.0, 3.0])
+    assert len(result) == 2
+    assert all(math.isfinite(value) for value in result)
+    assert math.isclose(sum(result), 1.0)</code></pre>
+        </div>
+        <ol>
+          <li><code>len(result) == 2</code>：检查输出数量与两个输入对应，防止结果意外增多或丢失。</li>
+          <li><code>math.isfinite(value)</code>：检查数值是有限值，能发现 NaN 和正负无穷。NaN 表示无法定义或无法表示的数值结果。</li>
+          <li><code>math.isclose(sum(result), 1.0)</code>：检查总和接近 1。浮点计算存在微小误差，通常不直接用绝对相等判断。</li>
+        </ol>
+        <p>　　指标门槛用于阻止效果退化，例如要求固定评估集上的准确率不低于 0.90。数据版本、指标定义和阈值都要明确，否则不同运行之间无法公平比较。门槛应根据项目基线制定，本书不替你设定统一数值。</p>
+
+        <h2 id="ch04-timing">4.6 怎样安排检查时机</h2>
+        <p>　　流水线并非越长越好。每次提交都运行数小时任务，会降低反馈速度，也会占用 Runner。可以按下面的方式分层，具体时长以项目实测为准。</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的检查时机表">
+          <table>
+            <thead><tr><th>检查内容</th><th>常见时机</th><th>主要目的</th></tr></thead>
+            <tbody>
+              <tr><td>格式、静态检查、快速单元测试</td><td>功能分支推送、PR/MR 更新</td><td>尽快发现基础问题</td></tr>
+              <tr><td>集成测试、小数据集冒烟</td><td>PR/MR、合并到主分支</td><td>验证关键链路</td></tr>
+              <tr><td>完整数据集评估、长时间训练</td><td>定时或手动</td><td>控制成本并观察整体效果</td></tr>
+              <tr><td>构建候选版本</td><td>主分支、版本标签或手动</td><td>形成可交付结果</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>　　覆盖率表示测试执行到了多少代码，常见指标是行覆盖率。覆盖率可以帮助发现完全没测试的区域，但高覆盖率不代表断言有效，也不代表算法指标达标。</p>
+
+        <h2 id="ch04-summary">本章小结</h2>
+        <p>　　CI 中的每项检查都应有明确目的。静态检查看基础质量，单元测试看局部行为，集成测试看模块协作，构建看交付能力，算法专项检查看数值与指标。</p>
+        <ul>
+          <li>测试和规则由团队提前准备，CI 与 Runner 负责自动执行。</li>
+          <li>冒烟测试用较小成本走通关键流程，不等于完整模型评估。</li>
+          <li>输出形状、有限数值和指标门槛是算法项目的常见检查。</li>
+          <li>快速检查频繁运行，耗时任务按成本定时或手动运行。</li>
+        </ul>
+        <div class="chapter-end">第 4 章完。继续阅读 <a href="#chapter-5">第 5 章：看懂并修改流水线配置</a>。</div>
+      </article>
+
+      <article id="chapter-5">
+        <h1>第 5 章　看懂并修改 GitLab CI 配置</h1>
+        <p class="subtitle">面向算法与软件开发者　·　预计阅读 18 分钟　·　目标是能看懂并做小范围修改</p>
+        <p class="lead">　　GitLab CI 的配置文件通常是仓库根目录下的 <code>.gitlab-ci.yml</code>。它告诉平台何时创建任务、任务按什么顺序执行，以及保存哪些结果。</p>
+        <p>　　本章片段只展示相关字段，不一定是可直接运行的完整文件。第 9 章会把所有必要配置放进一个完整项目。</p>
+        <ol>
+          <li><strong>5.1 先分清配置的层次</strong>：全局默认值、任务和命令。</li>
+          <li><strong>5.2 触发条件与 rules</strong>：控制流水线与任务是否出现。</li>
+          <li><strong>5.3 stages 与 needs</strong>：安排阶段顺序和精确依赖。</li>
+          <li><strong>5.4 artifacts 与 cache 配置</strong>：保存结果或加速安装。</li>
+          <li><strong>5.5 手动任务</strong>：把高成本操作交给人工决定。</li>
+          <li><strong>5.6 安全修改配置</strong>：小改动、先验证、再合并。</li>
+          <li><strong>5.7 常见配置错误</strong>：从现象反查配置。</li>
+        </ol>
+
+        <h2 id="ch05-structure">5.1 先分清配置的层次</h2>
+        <p>　　<code>stages</code>、<code>default</code>、<code>variables</code> 和 <code>cache</code> 等字段可以影响多个任务。每个 Job 又拥有自己的 <code>stage</code>、<code>script</code> 和 <code>artifacts</code> 等配置。<code>script</code> 中的命令才是 Runner 实际执行的动作。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="仓库中的配置定义触发规则、阶段和任务。CI 平台创建流水线并调度，Runner 准备环境执行命令，结果返回合并请求页面。">
+            %%SVG_CONFIG_EXECUTION%%
+          </div>
+          <figcaption>图 1　从仓库配置到执行结果的映射</figcaption>
+        </figure>
+        <h3>配置文件放在哪里</h3>
+        <p>　　在 GitLab 项目首页，你看到的通常是仓库文件列表。找到与 <code>src/</code>、<code>tests/</code> 同级的 <code>.gitlab-ci.yml</code>，开头有一个点，结尾是 <code>.yml</code>。点击文件名可以查看内容，但不要在主分支直接修改。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制项目文件位置示意">复制</button>
+          <pre tabindex="0"><code class="language-text">项目根目录
+├── .gitlab-ci.yml
+├── requirements.txt
+├── src/
+└── tests/</code></pre>
+        </div>
+        <p>　　这不是 Python 脚本。<code>.gitlab-ci.yml</code> 使用 YAML 描述任务，<code>script:</code> 下面的一条条命令才是在终端里执行的 shell 命令。YAML 靠缩进表达归属，本书统一使用两个空格作为一级缩进，不使用 Tab。例如：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制带格式说明的 GitLab CI 配置">复制</button>
+          <pre tabindex="0"><code class="language-yaml">stages: [test]
+
+unit_test:
+  stage: test
+  image: python:3.12
+  script:
+    - python -m pip install -r requirements.txt pytest
+    - python -m pytest</code></pre>
+        </div>
+        <ol>
+          <li>第 1 行 <code>stages: [test]</code>：定义一个名为 <code>test</code> 的阶段。它位于顶层，前面没有空格。</li>
+          <li>第 3 行 <code>unit_test:</code>：定义一个 Job 名称。名称也在顶层，末尾的冒号表示下面还有它的配置。</li>
+          <li>第 4 行 <code>stage: test</code>：前面缩进两个空格，表示该配置属于 <code>unit_test</code>。</li>
+          <li>第 5 行 <code>image: python:3.12</code>：指定这个 Job 使用的容器镜像，同样属于 <code>unit_test</code>。</li>
+          <li>第 6 行 <code>script:</code>：声明接下来要执行的命令列表。</li>
+          <li>第 7、8 行：缩进四个空格并用短横线开头，分别安装依赖、运行测试。两条命令按顺序执行，前一条失败时通常不会继续下一条。</li>
+        </ol>
+        <p>　　不要把 <code>script:</code> 与命令写到同一层，也不要用 Tab 补齐缩进。空格数量或层级错误会改变配置含义，或者让 YAML 无法解析。</p>
+        <p>　　阅读配置时，先看全局字段，再找与当前问题有关的 Job，最后阅读它的命令。不要从第一行开始逐字硬背，也不要看到一个字段就立即修改。</p>
+
+        <h2 id="ch05-rules">5.2 触发条件与 rules</h2>
+        <p>　　<code>rules</code> 是 Job 的规则列表，按从上到下的顺序匹配，第一条满足的规则生效。没有规则匹配时，这个 Job 不会加入本次流水线。<code>CI_PIPELINE_SOURCE</code> 表示流水线来源，例如合并请求、推送或定时计划。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制 GitLab rules 示例">复制</button>
+          <pre tabindex="0"><code class="language-yaml">unit_test:
+  script:
+    - python -m pytest
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - when: never</code></pre>
+        </div>
+        <ol>
+          <li><code>script</code>：指定这个 Job 需要执行的测试命令。</li>
+          <li>第一条 <code>if</code>：合并请求事件创建流水线时，把单元测试加入流程。</li>
+          <li>第二条 <code>if</code>：主分支的流水线也加入单元测试。</li>
+          <li><code>when: never</code>：前面都不满足时，明确不创建这个 Job。</li>
+        </ol>
+        <p>　　<code>workflow: rules</code> 控制整条流水线是否创建，Job 的 <code>rules</code> 控制某个任务是否加入。先看流水线有没有出现，再检查 Job 有没有出现，可以避免把两个问题混在一起。</p>
+        <p>　　功能分支推送和合并请求可能对应不同流水线类型。配置不当时，同一提交也可能出现重复流水线，因此新增触发规则后要实际检查流水线列表，不能只看 YAML 语法。</p>
+
+        <h2 id="ch05-needs">5.3 stages 与 needs</h2>
+        <p>　　<code>stages</code> 定义阶段顺序，<code>stage</code> 把 Job 放入某个阶段。<code>needs</code> 则写明当前 Job 依赖哪些前置 Job，使任务可以按明确依赖提前衔接，而不必等待整个阶段。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制 stages 与 needs 示例">复制</button>
+          <pre tabindex="0"><code class="language-yaml">stages: [test, build]
+
+unit_test:
+  stage: test
+  script:
+    - python -m pytest
+
+package:
+  stage: build
+  needs: [unit_test]
+  script:
+    - python -m build</code></pre>
+        </div>
+        <ol>
+          <li><code>stages</code>：声明测试阶段在构建阶段之前。</li>
+          <li><code>unit_test</code>：在测试阶段执行 pytest。</li>
+          <li><code>needs: [unit_test]</code>：构建 Job 必须等 <code>unit_test</code> 成功完成。</li>
+          <li><code>package</code>：在构建阶段生成软件包。</li>
+        </ol>
+        <p>　　<code>needs</code> 描述依赖，不会让两个 Job 共用同一工作目录。需要传递文件时，仍应配置 Artifact。默认情况下，Job 会下载 <code>needs</code> 所列前置 Job 的产物。</p>
+
+        <h2 id="ch05-files">5.4 artifacts 与 cache 配置</h2>
+        <p>　　下面配置把 <code>dist/</code> 保存为构建产物，并设置七天后过期。<code>expire_in</code> 是保存期限，过期后平台会清理产物，重要交付文件应按团队策略转入制品库。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制 Artifact 配置示例">复制</button>
+          <pre tabindex="0"><code class="language-yaml">package:
+  script:
+    - python -m build
+  artifacts:
+    paths: [dist/]
+    expire_in: 7 days</code></pre>
+        </div>
+        <p>　　缓存配置应指向工具真正使用的目录，并用依赖清单生成缓存标识。缓存只负责加速，不能作为构建结果的传递通道。第 3 章的完整片段已经展示了 pip 缓存目录与 <code>cache.paths</code> 的对应关系。</p>
+
+        <h2 id="ch05-manual">5.5 手动任务</h2>
+        <p>　　手动任务适合耗时评估、候选版本构建或发布等需要人工决定时机的操作。任务会等待有权限的人在页面上点击运行。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制手动任务配置示例">复制</button>
+          <pre tabindex="0"><code class="language-yaml">regression:
+  stage: test
+  when: manual
+  allow_failure: true
+  script:
+    - python -m pytest tests/regression/</code></pre>
+        </div>
+        <ol>
+          <li><code>when: manual</code>：不自动执行，等待人工点击。</li>
+          <li><code>allow_failure: true</code>：允许这个手动任务不运行或失败而不阻塞整体结果，适合可选检查。</li>
+          <li><code>script</code>：人工启动后，Runner 执行回归测试目录中的测试。</li>
+        </ol>
+        <p>　　需要强制门禁的手动任务不能随便设置 <code>allow_failure: true</code>。发布类任务还涉及权限和环境，修改前先确认团队的发布规则。</p>
+
+        <h2 id="ch05-edit">5.6 安全修改配置</h2>
+        <p>　　修改团队流水线与修改代码一样需要评审。你可以在本地编辑器修改后推送，也可以使用 GitLab 网页自带的流水线编辑器。后者入口是项目左侧“构建 &gt; 流水线编辑器”，英文为 <code>Build &gt; Pipeline editor</code>。</p>
+        <div class="table-wrap" tabindex="0" aria-label="GitLab 流水线编辑器各标签用途">
+          <table>
+            <thead><tr><th>页面标签</th><th>你用它做什么</th></tr></thead>
+            <tbody>
+              <tr><td><code>Edit</code></td><td>编辑仓库根目录的 <code>.gitlab-ci.yml</code>，查看基础语法检查</td></tr>
+              <tr><td><code>Validate</code></td><td>点击 <code>Validate pipeline</code>，模拟一次事件并检查配置和依赖是否合理</td></tr>
+              <tr><td><code>Visualize</code></td><td>查看阶段、Job 以及 <code>needs</code> 依赖关系</td></tr>
+              <tr><td><code>Full configuration</code></td><td>查看 <code>include</code> 引入并展开后的完整配置</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ol>
+          <li>先读完整配置，找到全局默认值、触发规则和目标任务，确认没有 <code>include</code> 引入的其他配置。</li>
+          <li>在页面顶部选择自己的功能分支。没有功能分支时，按第 2 章的方法先在本地创建，避免直接改主分支。</li>
+          <li>在 <code>Edit</code> 标签做一个小改动，例如只增加一个检查 Job，不同时重写整条流水线。</li>
+          <li>到 <code>Validate</code> 标签检查配置。它主要模拟推送事件，MR 或标签的触发条件仍要通过相应真实流水线验证。</li>
+          <li>到 <code>Visualize</code> 和 <code>Full configuration</code> 标签检查任务与引入结果。语法通过不代表命令一定成功。</li>
+          <li>在页面底部写提交说明并提交到新分支，勾选“使用这些更改发起新的合并请求”。进入 MR 后检查实际流水线，再按团队流程评审合并。</li>
+        </ol>
+        <p>　　<code>include</code> 表示引入其他本地或远程 CI 配置。团队项目常把公共规则放在共享模板中，因此根目录文件不一定包含全部内容。</p>
+
+        <h2 id="ch05-errors">5.7 常见配置错误</h2>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的配置错误表">
+          <table>
+            <thead><tr><th>现象</th><th>优先检查</th><th>处理方式</th></tr></thead>
+            <tbody>
+              <tr><td>整条流水线没有出现</td><td><code>workflow: rules</code>、触发来源、配置是否在当前提交中</td><td>核对事件与条件，不要盲目新增任务</td></tr>
+              <tr><td>流水线存在但缺少 Job</td><td>Job 的 <code>rules</code> 是否匹配</td><td>对照流水线来源逐条判断</td></tr>
+              <tr><td>同一改动出现重复流水线</td><td>分支与合并请求规则是否同时命中</td><td>按团队策略排除重复触发</td></tr>
+              <tr><td>找不到产物或缓存无效</td><td>实际写入目录与声明目录是否一致</td><td>核对路径，不假设所有文件会自动保存</td></tr>
+              <tr><td>本地成功、CI 命令不存在</td><td>镜像和依赖安装步骤</td><td>在配置中明确安装所需工具</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="ch05-summary">本章小结</h2>
+        <p>　　阅读 GitLab CI 配置时，先看流水线规则，再看 Job 规则、依赖和命令。修改后用配置检查工具与真实流水线共同验证，不能只凭 YAML 外观判断结果。</p>
+        <ul>
+          <li><code>workflow: rules</code> 控制流水线，Job 的 <code>rules</code> 控制任务。</li>
+          <li><code>stages</code> 组织阶段，<code>needs</code> 指定精确依赖。</li>
+          <li>Artifact 保存结果，Cache 加速，手动任务等待人工启动。</li>
+          <li>配置也要经过小改动、验证和代码评审。</li>
+        </ul>
+        <div class="chapter-end">第 5 章完。继续阅读 <a href="#chapter-6">第 6 章：流水线的日常操作</a>。</div>
+      </article>
+
+      <article id="chapter-6">
+        <h1>第 6 章　流水线的日常操作</h1>
+        <p class="subtitle">面向算法与软件开发者　·　预计阅读 16 分钟　·　目标是能查看、修复、重跑和取证</p>
+        <p class="lead">　　日常使用 CI 的主要动作不是改配置，而是查看状态、打开失败日志、修复代码、重新验证，以及下载产物或启动手动任务。</p>
+        <ol>
+          <li><strong>6.1 看懂流水线与 Job 状态</strong>：先判断当前处于哪一步。</li>
+          <li><strong>6.2 阅读失败日志</strong>：从第一条有效错误开始。</li>
+          <li><strong>6.3 修复后重新验证</strong>：本地检查，再推送新提交。</li>
+          <li><strong>6.4 什么时候可以重跑</strong>：区分环境故障和代码失败。</li>
+          <li><strong>6.5 产物、手动任务与取消</strong>：完成常见页面操作。</li>
+          <li><strong>6.6 怎样向同事反馈问题</strong>：提供可定位的信息。</li>
+        </ol>
+
+        <h2 id="ch06-status">6.1 看懂流水线与 Job 状态</h2>
+        <p>　　在项目左侧选择“构建 &gt; 流水线”，英文界面是 <code>Build &gt; Pipelines</code>。也可以从 MR 的流水线区域进入。列表中的一行代表一次流水线，不是一行代码或一个测试。</p>
+        <figure>
+          <div class="screenshot-frame">
+            <img class="gitlab-screenshot" src="%%GITLAB_PIPELINE_LIST%%" alt="GitLab 公开项目的真实流水线列表。左侧导航选中流水线，中间依次显示状态、流水线编号与提交、创建人和各阶段图标，右侧有下载等操作。" width="1440" height="900" loading="lazy">
+          </div>
+          <figcaption>实景图：GitLab.com 公开项目的流水线列表。截图项目是大型工程，Job 数量比入门案例多。</figcaption>
+        </figure>
+        <ol>
+          <li>左侧“状态”显示整条流水线是否通过或失败。红叉表示失败，绿色勾表示通过，但阅读时仍要核对对应提交。</li>
+          <li>“流水线”一列包含编号、提交说明、关联 MR 和缩短的提交 SHA。点击流水线编号进入详情页。</li>
+          <li>“阶段”一列的每个图标对应一个 Job。鼠标悬停可查看任务名称，点击某个失败图标可直接进入该 Job 的日志。</li>
+          <li>右侧下载图标用于获取产物，只有任务实际生成了可下载产物才有内容。播放、重跑或取消等操作取决于状态和权限。</li>
+        </ol>
+        <p>　　看到多条记录时，先核对分支和提交 SHA，确认你看的是最新一次提交。不要只凭一个总状态判断全部细节。</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的任务状态表">
+          <table>
+            <thead><tr><th>状态</th><th>含义</th><th>你接下来做什么</th></tr></thead>
+            <tbody>
+              <tr><td>running</td><td>Runner 正在执行</td><td>等待或打开日志观察进度</td></tr>
+              <tr><td>pending</td><td>等待可用 Runner</td><td>长时间不变时检查 Runner 状态与标签</td></tr>
+              <tr><td>success</td><td>该 Job 的命令成功完成</td><td>继续检查其他任务和评审状态</td></tr>
+              <tr><td>failed</td><td>命令失败或执行环境出错</td><td>打开该 Job，定位有效错误</td></tr>
+              <tr><td>manual</td><td>等待人工启动</td><td>确认是否需要运行以及自己是否有权限</td></tr>
+              <tr><td>skipped</td><td>因条件或前置结果被跳过</td><td>检查规则和依赖，不当作通过</td></tr>
+              <tr><td>canceled</td><td>被用户或系统取消</td><td>确认取消原因，必要时重新运行</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="ch06-logs">6.2 阅读失败日志</h2>
+        <p>　　日志通常先显示 Runner 拉取代码、准备镜像和安装依赖，然后执行 <code>script</code> 中的命令。先找到哪一步失败，再找该步骤的第一条有效错误。最后一行常只是“命令返回失败”，不一定是真正原因。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="失败排查依次选择失败流水线、打开失败任务、定位第一条有效错误、本地复现修复、推送后复查。">
+            %%SVG_LOG_LOCATION%%
+          </div>
+          <figcaption>图 1　从失败流水线定位到修复验证</figcaption>
+        </figure>
+        <h3>真实的 GitLab Job 日志长什么样</h3>
+        <p>　　下图来自 GitLab 自己的公开项目，失败原因是流水线类型不符合任务预期。它不是本书 Python 案例的输出，但页面结构和阅读方法相同。</p>
+        <figure>
+          <div class="screenshot-frame">
+            <img class="gitlab-screenshot" src="%%GITLAB_JOB_LOG%%" alt="GitLab 真实失败 Job 的日志页面。中间是带行号和时间的命令输出，下方有具体错误和最后的退出码。右侧显示执行时长、Runner、来源、提交和关联 MR。" width="1440" height="900" loading="lazy">
+          </div>
+          <figcaption>实景图：一个真实失败 Job 的日志。单击图片可查看具体错误所在的第 70 至 73 行。</figcaption>
+        </figure>
+        <ol>
+          <li>中间最大的区域是 Runner 的实际输出。<code>$</code> 开头的行是正在执行的命令，后面的行是命令结果。左侧数字是日志行号，右侧时间是该条输出的时间。</li>
+          <li>日志顶部的搜索框可搜索 <code>FAILED</code>、<code>Error</code> 或错误码。搜索只帮助定位，仍要阅读命中位置前后的上下文。</li>
+          <li>图中第 70 行说明具体原因：任务期待 Merged Results 流水线，实际得到的引用不符合预期。第 71 行给出项目自己的处理提示。这两行比最后的退出码更有用。</li>
+          <li>最后的 <code>ERROR: Job failed: exit code 1</code> 表示命令以失败状态结束。它是结果摘要，不是这次失败的根本原因。</li>
+          <li>右侧可核对 Runner、流水线来源、提交 SHA 和关联 MR。向同事反馈时，应提供 Job 页面链接和提交信息，不要只截最后几行。</li>
+        </ol>
+        <p>　　如果看到的是代码或测试问题，就回到本地修改并推送。如果日志显示权限、Runner 或平台服务问题，保留链接并联系对应维护者。完整搜索和显示原始日志等按钮的位置可能随版本变化，以页面工具栏为准。</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的日志线索表">
+          <table>
+            <thead><tr><th>日志线索</th><th>通常表示</th><th>优先检查</th></tr></thead>
+            <tbody>
+              <tr><td><code>FAILED tests/...</code></td><td>某个测试断言失败</td><td>输入、预期结果与本次代码改动</td></tr>
+              <tr><td><code>ModuleNotFoundError</code></td><td>Python 找不到依赖或项目模块</td><td>依赖安装、包配置与导入路径</td></tr>
+              <tr><td><code>FileNotFoundError</code></td><td>代码读取的文件不存在</td><td>相对路径、文件是否随仓库提交</td></tr>
+              <tr><td><code>exit code 127</code></td><td>命令不存在或无法找到</td><td>工具是否安装、命令名称是否正确</td></tr>
+              <tr><td><code>exit code 1</code></td><td>命令以通用失败状态结束</td><td>继续向上找具体错误，不能只看这一行</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="ch06-fix">6.3 修复后重新验证</h2>
+        <p>　　能在本地复现时，先修复并运行与 CI 相同或更聚焦的命令。下面四行是一个完整修复提交过程：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制修复验证命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m pytest tests/test_preprocess.py -x
+git add src/preprocess.py tests/test_preprocess.py
+git commit -m "修复空输入的归一化处理"
+git push</code></pre>
+        </div>
+        <ol>
+          <li><code>python -m pytest tests/test_preprocess.py -x</code>：运行相关测试，<code>-x</code> 表示遇到第一个失败就停止，便于集中处理。</li>
+          <li><code>git add ...</code>：把功能修复和对应测试一起放入暂存区，路径按实际改动调整。</li>
+          <li><code>git commit ...</code>：创建说明清晰的本地修复提交。</li>
+          <li><code>git push</code>：推送到原功能分支，让同一 PR/MR 基于新提交重新检查。</li>
+        </ol>
+        <p>　　推送后回到 PR/MR，确认新流水线对应新的提交 SHA。旧流水线失败记录仍然保留，它能帮助追溯，但不要误把旧结果当作新结果。</p>
+
+        <h2 id="ch06-retry">6.4 什么时候可以重跑</h2>
+        <p>　　重跑会在原流水线的同一提交上再次执行，适合 Runner 临时故障、外部服务短暂不可用、依赖源网络异常等情况。代码断言稳定失败时，重跑通常只会重复同样结果。</p>
+        <p>　　重跑前先保存第一条有效错误。如果同一提交多次出现不同结果，要记录为偶发问题，检查网络、共享数据、随机种子和并发资源，不要用反复重跑掩盖不稳定测试。</p>
+
+        <h2 id="ch06-actions">6.5 产物、手动任务与取消</h2>
+        <p>　　下载产物时，可以从流水线列表右侧的下载图标进入，也可以打开生成该文件的 Job，在详情页选择 <code>Download</code>。想先查看压缩包内有哪些文件，选择 <code>Browse</code>。项目的“构建 &gt; 产物”页面，即 <code>Build &gt; Artifacts</code>，可以集中浏览各 Job 的产物。</p>
+        <p>　　核对提交和任务名称再下载。测试报告、评估结果和构建包可能分别来自不同 Job。产物有保存期限，过期后需要重新生成。没有配置 <code>artifacts</code> 的 Job 不会自动提供你本地目录中的所有文件。</p>
+        <p>　　手动任务在流水线图中显示播放按钮，点击 <code>Run</code> 才会启动。启动前看清目标环境、变量和提交，尤其不要把生产发布当作普通测试随意点击。</p>
+        <p>　　取消流水线会停止尚未完成的任务。自己的功能分支出现更新提交时，取消旧检查可以节省资源。涉及共享构建或发布的流水线，先确认影响再取消。</p>
+
+        <h2 id="ch06-report">6.6 怎样向同事反馈问题</h2>
+        <p>　　需要帮助时，提供足够让同事定位的信息，避免只发一句“CI 挂了”。推荐包含：</p>
+        <ul>
+          <li><strong>链接：</strong>PR/MR、流水线和失败 Job 的页面链接。</li>
+          <li><strong>版本：</strong>分支名称、提交 SHA，以及是否是最新提交。</li>
+          <li><strong>错误：</strong>第一条有效错误及必要的上下文，脱敏后再分享。</li>
+          <li><strong>复现：</strong>本地是否能复现，使用了什么命令和 Python 版本。</li>
+          <li><strong>已尝试：</strong>做过的修复、重跑结果，以及怀疑的代码或环境范围。</li>
+        </ul>
+        <p>　　这些信息能把讨论从“流水线坏了”缩小到“某个提交、某个任务、某条错误”，减少同事反复追问。</p>
+
+        <h2 id="ch06-summary">本章小结</h2>
+        <p>　　日常操作可以固定为：核对提交，找到失败 Job，阅读第一条有效错误，本地复现修复，推送后检查新流水线。环境故障可以考虑重跑，代码问题应修复后再验证。</p>
+        <ul>
+          <li>pending 多表示等待 Runner，failed 需要阅读具体日志。</li>
+          <li>最后一行退出码通常不是完整原因，要向上找第一条有效错误。</li>
+          <li>重跑使用原提交，推送修复会形成新提交和新流水线。</li>
+          <li>反馈问题时提供链接、版本、错误、复现命令和已尝试操作。</li>
+        </ul>
+        <div class="chapter-end">第 6 章完。继续阅读 <a href="#chapter-7">第 7 章：多人协作规则与注意事项</a>。</div>
+      </article>
+
+      <article id="chapter-7">
+        <h1>第 7 章　多人协作规则与注意事项</h1>
+        <p class="subtitle">面向算法与软件开发者　·　预计阅读 17 分钟　·　目标是安全地参与团队维护</p>
+        <p class="lead">　　CI 能自动检查代码，但团队仍需要约定谁能合并、怎样处理冲突、如何保护密钥，以及怎样让不同电脑得到一致结果。</p>
+        <ol>
+          <li><strong>7.1 主分支保护与合并门禁</strong>：理解为什么检查未过不能合并。</li>
+          <li><strong>7.2 小提交与小合并请求</strong>：降低评审和回退成本。</li>
+          <li><strong>7.3 同步主分支与处理冲突</strong>：把冲突解决在功能分支。</li>
+          <li><strong>7.4 密钥与敏感信息</strong>：避免把凭证交给仓库和日志。</li>
+          <li><strong>7.5 固定依赖与可重复环境</strong>：减少环境差异。</li>
+          <li><strong>7.6 配置评审与故障沟通</strong>：明确责任与协作边界。</li>
+        </ol>
+
+        <h2 id="ch07-protection">7.1 主分支保护与合并门禁</h2>
+        <p>　　主分支保护是平台对重要分支设置的限制，例如禁止直接推送、禁止强制推送，或要求通过合并请求进入。合并门禁是允许合并前必须满足的条件，例如 CI 成功、一定数量的评审批准、讨论已解决。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="功能分支的小改动通过合并请求进入 CI 和评审门禁。满足主分支保护条件后才能合并，未满足则被阻止。">
+            %%SVG_MERGE_GATE%%
+          </div>
+          <figcaption>图 1　主分支保护下的合并路径</figcaption>
+        </figure>
+        <h3>在 GitLab 哪里看这些规则</h3>
+        <p>　　当前 GitLab 的项目入口通常是“设置 &gt; 仓库”，展开“分支规则”。英文路径是 <code>Settings &gt; Repository &gt; Branch rules</code>。选择 <code>main</code> 的规则，可以看到谁允许合并、谁允许直接推送和合并，以及是否允许强制推送。</p>
+        <ol>
+          <li>有维护权限的同事进入上述页面，点击 <code>Add branch rule</code> 添加规则，或打开已有的 <code>main</code> 规则。</li>
+          <li><code>Allowed to merge</code> 控制谁可以通过 MR 合并，<code>Allowed to push and merge</code> 控制谁可以直接推送并合并。若要求所有改动都走 MR，后者通常设为 <code>No one</code>。</li>
+          <li>在“设置 &gt; 合并请求”检查合并条件，例如流水线必须成功、所有讨论必须解决。审批数量等能力还与 GitLab 版本和套餐有关。</li>
+          <li>普通开发者主要查看结果并遵守规则。看不到“设置”或无法编辑，通常说明没有 Maintainer 或 Owner 等所需角色，请联系负责人，不要自行绕过。</li>
+        </ol>
+        <p>　　这些规则通常由项目负责人或管理员配置。旧版本可能仍显示“受保护分支”或 <code>Protected branches</code> 页面，位置略有差异。门禁未通过时，应修复检查或完成评审，不要寻找绕过方法。</p>
+        <p>　　CI 成功只是合并条件之一。测试没有覆盖的算法逻辑、接口兼容性和数据风险，仍需要评审人员判断。</p>
+
+        <h2 id="ch07-small">7.2 小提交与小合并请求</h2>
+        <p>　　提交是本地版本记录，合并请求是团队评审一组提交的方式。一个提交尽量围绕一个明确动作，一个合并请求尽量围绕一个可说明的目标。提交可以多个，合并请求不必每提交一次就新建一个。</p>
+        <ul>
+          <li><strong>适合放在一个合并请求：</strong>修复归一化空输入、补充对应测试、更新相关说明。</li>
+          <li><strong>适合拆开：</strong>归一化修复与无关的界面重构，或功能修改与大规模依赖升级。</li>
+          <li><strong>提交前检查：</strong>临时调试文件、个人数据、模型权重和密钥不应误加入。</li>
+        </ul>
+        <p>　　小改动更容易评审、测试和回退。需要拆分工作时，按可验证的功能边界拆，不要为了凑数量制造许多无意义提交。</p>
+
+        <h2 id="ch07-conflict">7.3 同步主分支与处理冲突</h2>
+        <p>　　任务持续时间较长时，主分支可能已经有别人的改动。可以在功能分支合并最新主分支，提前处理冲突。冲突表示 Git 无法自动判断同一处内容应保留哪种修改，需要人来决定。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制同步主分支命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">git switch main
+git pull origin main
+git switch feature/normalize-input
+git merge main
+python -m pytest
+git add src/preprocess.py
+git commit -m "合并主分支并解决预处理冲突"
+git push</code></pre>
+        </div>
+        <ol>
+          <li><code>git switch main</code>：先切回本地主分支。</li>
+          <li><code>git pull origin main</code>：获取远程主分支的最新改动。</li>
+          <li><code>git switch feature/normalize-input</code>：回到自己的功能分支。</li>
+          <li><code>git merge main</code>：把最新主分支合并进功能分支。若出现冲突，先解决再继续。</li>
+          <li><code>python -m pytest</code>：验证合并后的代码仍能正常工作。</li>
+          <li><code>git add src/preprocess.py</code>：冲突解决后，把对应文件标记为已处理，路径按实际情况填写。</li>
+          <li><code>git commit ...</code>：冲突导致合并暂停时，用提交完成合并。没有冲突且已自动提交时，可跳过第 6、7 行。</li>
+          <li><code>git push</code>：把同步后的功能分支推送，重新运行 CI。</li>
+        </ol>
+        <p>　　解决冲突时，先用 <code>git status</code> 找出冲突文件，再检查 <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code>、<code>=======</code>、<code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> 标记两侧的内容。保留正确逻辑并删除标记，不能简单全选自己或全选对方。尚未完成时可以按团队指导使用 <code>git merge --abort</code> 放弃本次合并。</p>
+
+        <h2 id="ch07-secrets">7.4 密钥与敏感信息</h2>
+        <p>　　密码、访问令牌、私钥和内部数据地址应通过平台的变量或密钥管理功能提供。GitLab 项目的入口通常是“设置 &gt; CI/CD”，展开“变量”，即 <code>Settings &gt; CI/CD &gt; Variables</code>。只有具备相应项目角色的成员才能查看或维护这些设置。</p>
+        <p>　　添加变量时填写键名和值，按团队要求启用遮罩或保护。遮罩用于减少日志中的明文展示，保护用于限制变量可被哪些受保护分支或标签使用。普通测试通常不需要接触生产凭证，不要为了跑通测试而随意申请高权限密钥。</p>
+        <p>　　不要在测试中打印完整凭证，也不要把包含生产数据的文件提交到仓库。分享日志时先脱敏，尤其是请求地址、请求头和用户信息。</p>
+        <p>　　如果密钥已经泄露，应立即通知负责人并按流程吊销或轮换。仅删除文件或再提交一次“删除密钥”不会抹去 Git 历史中的旧内容。</p>
+
+        <h2 id="ch07-repro">7.5 固定依赖与可重复环境</h2>
+        <p>　　可重复环境指同一提交在不同时间和机器上能按相同依赖与数据运行。依赖漂移会使昨天通过的代码今天失败，因此团队会固定 Python 版本、关键依赖、容器镜像和测试数据版本。</p>
+        <ul>
+          <li><code>package==1.2.3</code> 表示固定直接依赖版本，<code>requirements.txt</code> 常用来记录这些要求。</li>
+          <li>锁文件进一步固定直接和间接依赖，让完整安装结果更稳定，具体格式由项目工具决定。</li>
+          <li>容器镜像避免随意使用会变化的 <code>latest</code>，测试数据避免依赖个人电脑上的绝对路径。</li>
+          <li>升级依赖应在独立合并请求中完成，并运行完整相关测试。</li>
+        </ul>
+
+        <h2 id="ch07-ownership">7.6 配置评审与故障沟通</h2>
+        <p>　　CI 配置、依赖清单和测试脚本也属于代码。修改后应经过同样的评审和验证，不能因为“只是改流水线”就直接提交到主分支。</p>
+        <p>　　代码问题通常由提交者修复，共享 Runner、权限和平台故障由对应维护者处理。判断不清时，把失败链接、提交 SHA、第一条有效错误和本地复现情况发出来，团队更容易分工。</p>
+        <p>　　不要为了赶进度随意删除测试、降低阈值或关闭门禁。确需调整时，应在合并请求中写明理由、影响范围和后续补救，由团队共同确认。</p>
+
+        <h2 id="ch07-summary">本章小结</h2>
+        <p>　　多人协作的关键是清楚边界：功能分支承载改动，CI 与评审共同验证，满足门禁后合并。遇到冲突、密钥泄露和环境差异时，按团队规则处理，不用绕过检查换取短暂通过。</p>
+        <ul>
+          <li>主分支保护和合并门禁由团队维护，普通开发者不自行绕过。</li>
+          <li>小提交、小合并请求和对应测试能降低协作成本。</li>
+          <li>冲突需要人判断，密钥泄露需要吊销或轮换。</li>
+          <li>固定依赖、配置评审和完整故障信息有助于长期维护。</li>
+        </ul>
+        <div class="chapter-end">第 7 章完。继续阅读 <a href="#chapter-8">第 8 章：常见问题与排查方法</a>。</div>
+      </article>
+
+      <article id="chapter-8">
+        <h1>第 8 章　常见问题与排查方法</h1>
+        <p class="subtitle">面向算法与软件开发者　·　预计阅读 18 分钟　·　目标是建立稳定的排查顺序</p>
+        <p class="lead">　　CI 报错看似很多，排查时可以先分成几类：流水线没有触发、任务等待 Runner、命令执行失败，或者本地与 CI 的环境不一致。</p>
+        <ol>
+          <li><strong>8.1 先按层级缩小范围</strong>：事件、配置、Runner、命令。</li>
+          <li><strong>8.2 本地通过但 CI 失败</strong>：比较真实环境差异。</li>
+          <li><strong>8.3 依赖与模块问题</strong>：检查安装和导入两条链路。</li>
+          <li><strong>8.4 路径、数据与缓存</strong>：确认输入真实存在且一致。</li>
+          <li><strong>8.5 未触发、一直等待或缺少 Job</strong>：分别检查规则和资源。</li>
+          <li><strong>8.6 偶发失败与耗时过长</strong>：记录不稳定性并测量瓶颈。</li>
+          <li><strong>8.7 实用诊断命令</strong>：用输出支持判断。</li>
+        </ol>
+
+        <h2 id="ch08-layers">8.1 先按层级缩小范围</h2>
+        <p>　　先确认分支和提交，再看流水线是否创建。没有流水线时检查触发规则。流水线存在但一直等待时检查 Runner。Job 已失败时才进入日志分析。这个顺序能避免在代码里寻找实际上由权限或资源造成的问题。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="排查先确认分支和提交。未创建流水线时检查触发规则。已创建但没有可用 Runner 时检查执行资源。Runner 可用后读取失败任务日志，按代码、依赖、数据或环境分类修复。">
+            %%SVG_TRIAGE%%
+          </div>
+          <figcaption>图 1　从未触发到命令失败的排查路径</figcaption>
+        </figure>
+        <p>　　每次只验证一个主要假设。记录你看到的证据和做过的修改，否则同时改依赖、代码和配置后，即使通过也很难知道真正原因。</p>
+
+        <h2 id="ch08-local">8.2 本地通过但 CI 失败</h2>
+        <p>　　“本地通过”只说明你电脑上的某套环境通过。CI 可能使用不同操作系统、Python 版本、依赖版本、文件路径和权限。先比较环境，再判断代码是否有跨平台问题。</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的环境差异表">
+          <table>
+            <thead><tr><th>差异</th><th>常见表现</th><th>检查方法</th></tr></thead>
+            <tbody>
+              <tr><td>Python 或依赖版本</td><td>语法、API 或数值结果不同</td><td>对比版本输出和依赖清单</td></tr>
+              <tr><td>操作系统</td><td>路径分隔符、文件名大小写行为不同</td><td>使用项目路径工具，检查真实文件名</td></tr>
+              <tr><td>工作目录</td><td>相对路径找不到文件</td><td>打印当前目录，确认命令从哪里执行</td></tr>
+              <tr><td>环境变量与权限</td><td>本地能访问服务，CI 被拒绝</td><td>检查变量是否存在及当前分支权限</td></tr>
+              <tr><td>本地未提交文件</td><td>本地测试完整，CI 缺数据或模块</td><td>检查 Git 是否实际跟踪这些文件</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>　　Linux 文件名通常区分大小写，Windows 常见文件系统通常不区分。<code>Data.csv</code> 与 <code>data.csv</code> 在本地可能被当成同一个文件，在 CI 的 Linux Runner 中却不同。</p>
+
+        <h2 id="ch08-deps">8.3 依赖与模块问题</h2>
+        <p>　　依赖没有安装与模块无法导入是两个相邻但不同的环节。安装失败先看 pip 输出、版本约束和网络来源。安装成功后出现 <code>ModuleNotFoundError</code>，再检查包名、项目安装方式和导入路径。</p>
+        <ul>
+          <li><strong>找不到依赖：</strong>检查 <code>requirements.txt</code> 是否包含它，安装步骤是否在同一 Job 中成功。</li>
+          <li><strong>版本冲突：</strong>阅读解析器提示，确认哪些包要求了不兼容版本，不要直接全部升级到最新版。</li>
+          <li><strong>项目模块找不到：</strong>采用 src 目录布局时，通常需要安装项目本身或正确配置导入路径。</li>
+          <li><strong>私有源不可达：</strong>检查 CI 网络、认证变量和访问权限，不要把私有令牌写进仓库。</li>
+        </ul>
+        <p>　　修改依赖时保留失败输出，并单独提交依赖变化。这样既方便评审，也能在升级引入问题时快速定位。</p>
+
+        <h2 id="ch08-data-cache">8.4 路径、数据与缓存</h2>
+        <p>　　代码中的相对路径取决于命令执行时的当前目录，不完全取决于文件所在位置。团队常约定从仓库根目录运行命令，并用项目路径构造数据位置。个人电脑上的 <code>D:\data</code> 或 <code>/home/name/data</code> 不应成为 CI 的隐含前提。</p>
+        <p>　　测试数据没有随仓库提交时，本地存在的文件不会自动出现在 Runner 中。小测试样例可以纳入仓库，大数据集应通过团队规定的存储与下载流程提供，并记录版本。</p>
+        <p>　　缓存损坏或复用了不合适的内容时，可能导致安装异常。先核对缓存标识、依赖文件和实际目录，再考虑清除对应缓存。缓存只是加速手段，不能在每次失败时都先清缓存，也不能用缓存传递测试报告。</p>
+
+        <h2 id="ch08-trigger-runner">8.5 未触发、一直等待或缺少 Job</h2>
+        <p>　　流水线没有创建时，检查当前提交是否包含有效 CI 配置、项目的 CI 功能是否启用，以及 <code>workflow: rules</code> 是否允许当前事件。流水线存在但缺少 Job 时，再检查该 Job 的 <code>rules</code>。</p>
+        <p>　　任务一直处于 pending 时，检查可用 Runner 是否在线、是否接受该项目，以及标签是否匹配。Runner 标签用于选择具备特定系统、硬件或权限的执行资源。任务要求 GPU 标签，而在线 Runner 没有这个标签时，任务可能持续等待。</p>
+        <p>　　没有权限查看或修改 Runner 时，把 pending 任务链接、等待时长和所需标签提供给维护者。不要随意删除标签让任务跑在不符合要求的机器上。</p>
+
+        <h2 id="ch08-flaky-slow">8.6 偶发失败与耗时过长</h2>
+        <p>　　偶发失败常叫 flaky test，指同一提交在输入看似不变时，多次运行出现不同结果。常见原因包括随机数、测试执行顺序、共享文件、外部服务、系统时间和并发资源。</p>
+        <p>　　处理偶发失败时，保存成功与失败日志，记录随机种子、输入数据和运行时间，尽量稳定复现。自动重试可以应对明确的外部临时故障，但不能替代修复不稳定的测试。</p>
+        <p>　　耗时过长时，先用测试耗时报告和 Job 日志找出慢在哪里，再考虑缩小测试数据、拆分独立任务、并行执行或增加合理缓存。优化前先测量，不要凭感觉删除慢测试。</p>
+
+        <h2 id="ch08-commands">8.7 实用诊断命令</h2>
+        <p>　　下面命令用于收集证据，不会自动修复问题。在本地或允许调试的 Runner 环境中按需执行：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制 CI 诊断命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python --version
+python -m pip check
+python -m pytest --collect-only -q
+python -m pytest tests/ --durations=10</code></pre>
+        </div>
+        <ol>
+          <li><code>python --version</code>：确认实际使用的 Python 版本，与 CI 镜像和项目要求对比。</li>
+          <li><code>python -m pip check</code>：检查当前环境中已安装包的依赖要求是否存在冲突或缺失。</li>
+          <li><code>python -m pytest --collect-only -q</code>：只收集并列出测试，不执行测试，可排查“没有发现测试”或发现范围错误。</li>
+          <li><code>python -m pytest tests/ --durations=10</code>：执行测试并列出最慢的十项，用于定位耗时热点。</li>
+        </ol>
+        <p>　　诊断命令的输出应与失败 Job、提交 SHA 一起记录。只保留“最后又成功了”无法帮助团队预防下一次问题。</p>
+
+        <h2 id="ch08-summary">本章小结</h2>
+        <p>　　排查 CI 问题时，先判断流水线是否创建、Runner 是否可用，再进入日志定位代码、依赖、数据或权限问题。每次根据证据验证一个假设，避免盲目重试和同时修改多处。</p>
+        <ul>
+          <li>本地与 CI 不一致时，先比较版本、系统、路径、变量和未提交文件。</li>
+          <li>未触发看流水线规则，缺 Job 看任务规则，pending 看 Runner 和标签。</li>
+          <li>缓存只用于加速，偶发失败要记录并复现，慢测试先测量再优化。</li>
+          <li>保留诊断输出，让修复经验能够被团队复用。</li>
+        </ul>
+        <div class="chapter-end">第 8 章完。继续阅读 <a href="#chapter-9">第 9 章：完整实战案例</a>。</div>
+      </article>
+
+      <article id="chapter-9">
+        <h1>第 9 章　完整实战：从写代码到合并交付</h1>
+        <p class="subtitle">面向算法与软件开发者　·　预计阅读 35 分钟　·　同一个项目贯穿全部操作</p>
+        <p class="lead">　　本章假设你是团队里的算法开发者。你接到一个任务：为数值归一化函数补充异常输入处理，并用 CI 证明修改没有破坏原有行为。从创建分支到合并后的产物下载，都围绕这一次任务展开。</p>
+        <p>　　你不需要已有 CI 使用经验。每节先说明当前要做什么，再给出文件或命令，最后解释产生了什么结果。示例使用 Windows 的 Git Bash 和 GitLab，团队实际界面与规则可能略有不同。</p>
+        <ol>
+          <li><strong>9.1 案例目标、角色与项目目录</strong>：知道这次任务由谁完成。</li>
+          <li><strong>9.2 创建功能分支</strong>：从最新主分支开始工作。</li>
+          <li><strong>9.3 编写功能代码</strong>：先让输入规则和输出行为明确。</li>
+          <li><strong>9.4 编写并理解测试</strong>：把预期行为写成可重复检查。</li>
+          <li><strong>9.5 配置依赖与打包</strong>：让本地和 CI 使用同一套项目描述。</li>
+          <li><strong>9.6 在本地完整验证</strong>：亲手跑通 CI 将重复执行的命令。</li>
+          <li><strong>9.7 理解 CI 配置与执行过程</strong>：知道 Runner 在三个 Job 中做什么。</li>
+          <li><strong>9.8 提交、推送并创建 MR</strong>：把本地工作交给团队验证。</li>
+          <li><strong>9.9 经历一次失败与修复</strong>：从日志回到代码，再回到新流水线。</li>
+          <li><strong>9.10 评审、合并与获取结果</strong>：完成协作闭环。</li>
+          <li><strong>9.11 全链路回顾与操作清单</strong>：把整个过程变成自己的工作顺序。</li>
+        </ol>
+
+        <h2 id="ch09-project">9.1 案例目标、角色与项目目录</h2>
+        <p>　　案例函数接收一组数值，返回各项除以总和后的结果。空列表返回空列表，NaN、无穷和总和为零的输入会抛出明确异常。你负责功能与测试，同事负责评审，CI 平台负责重复验证。</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的实战角色表">
+          <table>
+            <thead><tr><th>角色</th><th>在本案例中做什么</th><th>不负责什么</th></tr></thead>
+            <tbody>
+              <tr><td>你：代码提交者</td><td>写代码和测试，本地验证，提交 MR，修复问题</td><td>不把验证工作全部交给评审人员</td></tr>
+              <tr><td>GitLab 与 Runner</td><td>接收事件，创建流水线，执行检查并保存结果</td><td>不替你设计测试或判断算法是否合理</td></tr>
+              <tr><td>评审同事</td><td>检查逻辑、测试有效性和改动风险</td><td>不需要手动替你运行每条 CI 命令</td></tr>
+              <tr><td>合并负责人</td><td>确认门禁满足后执行合并</td><td>不在检查失败时强行合并</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>　　开始前，假设你已经安装 Python 3.12 和 Git，拥有团队仓库的推送权限，并且当前位于项目根目录。下面是本案例使用的目录。实际参与现有项目时，应沿用团队结构，不要直接覆盖同名文件。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制项目目录示例">复制</button>
+          <pre tabindex="0"><code class="language-text">algorithm-ci-demo/
+├── src/
+│   └── algorithm_demo/
+│       ├── __init__.py
+│       └── preprocess.py
+├── tests/
+│   └── test_preprocess.py
+├── pyproject.toml
+├── requirements.txt
+└── .gitlab-ci.yml</code></pre>
+        </div>
+        <ul>
+          <li><code>src/algorithm_demo/</code>：存放可安装的项目包，<code>preprocess.py</code> 放功能代码。</li>
+          <li><code>tests/</code>：存放 pytest 测试，与功能代码分开。</li>
+          <li><code>pyproject.toml</code>：描述项目打包方式、版本和 pytest 配置。</li>
+          <li><code>requirements.txt</code>：列出本次开发与 CI 使用的检查、测试和构建工具。</li>
+          <li><code>.gitlab-ci.yml</code>：定义 GitLab 的触发、任务、缓存和产物。</li>
+        </ul>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="完整实战依次准备功能、测试与配置，本地检查测试构建，功能分支提交推送，合并请求接受 CI 与评审，有问题则追加修复，全部通过后合并并获取产物。">
+            %%SVG_COMPLETE_CASE%%
+          </div>
+          <figcaption>图 1　从项目准备到合并交付的完整闭环</figcaption>
+        </figure>
+
+        <h2 id="ch09-branch">9.2 创建功能分支</h2>
+        <p>　　写代码之前，先给这次任务一个独立边界。这样主分支保持可共享状态，你的修改、测试和 CI 配置可以一起进入后面的合并请求。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制实战创建分支命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">git status
+git switch main
+git pull origin main
+git switch -c feature/safe-normalize</code></pre>
+        </div>
+        <ol>
+          <li><code>git status</code>：确认当前分支和未提交文件。如果还有别的任务改动，先处理它们，不要直接带进本案例。</li>
+          <li><code>git switch main</code>：切换到本地主分支。团队默认分支名称不同时，替换成实际名称。</li>
+          <li><code>git pull origin main</code>：把远程主分支的最新提交同步到本地，避免从旧版本开始。</li>
+          <li><code>git switch -c feature/safe-normalize</code>：创建并切换到功能分支。后续提交先留在这里，不会直接写入主分支。</li>
+        </ol>
+        <p>　　到这里还没有修改任何项目文件。接下来的功能代码、测试和配置改动，都会发生在这个功能分支上。</p>
+
+        <h2 id="ch09-code">9.3 编写功能代码</h2>
+        <p>　　先把任务要求转成明确规则：正常输入得到比例，空输入返回空列表，无法合理计算的输入给出异常。下面是 <code>src/algorithm_demo/preprocess.py</code> 的完整内容：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制归一化功能代码">复制</button>
+          <pre tabindex="0"><code class="language-python">import math
+
+
+def normalize(values: list[float]) -> list[float]:
+    if not values:
+        return []
+    if any(not math.isfinite(value) for value in values):
+        raise ValueError("输入必须都是有限数值")
+    total = sum(values)
+    if total == 0:
+        raise ValueError("总和为 0 时无法归一化")
+    return [value / total for value in values]</code></pre>
+        </div>
+        <ol>
+          <li><code>import math</code>：引入数学工具，后面用 <code>math.isfinite</code> 排除 NaN 和无穷。</li>
+          <li>函数声明：<code>list[float]</code> 表示输入和输出都是浮点数列表，函数名 <code>normalize</code> 表示归一化。</li>
+          <li>前两个判断：空列表直接返回，包含非有限数值时抛出 <code>ValueError</code>，避免继续产生无效结果。</li>
+          <li>最后两步：先求总和并拒绝除以零，再逐项除以总和，形成归一化结果。</li>
+        </ol>
+        <p>　　例如输入 <code>[1.0, 3.0]</code>，总和是 4，输出就是 <code>[0.25, 0.75]</code>。这个明确例子稍后会同时出现在测试和本地验证中。</p>
+
+        <h2 id="ch09-tests">9.4 编写并理解测试</h2>
+        <p>　　测试把刚才的规则写成机器可以重复执行的断言。断言就是“实际结果必须符合这个预期，否则测试失败”。测试文件由你编写，CI 以后只负责调用它。</p>
+        <p>　　下面是 <code>tests/test_preprocess.py</code> 的完整内容：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制归一化测试代码">复制</button>
+          <pre tabindex="0"><code class="language-python">import math
+
+import pytest
+
+from algorithm_demo.preprocess import normalize
+
+
+def test_normalize_values():
+    result = normalize([1.0, 3.0])
+    assert result == [0.25, 0.75]
+    assert math.isclose(sum(result), 1.0)
+
+
+def test_empty_input():
+    assert normalize([]) == []
+
+
+def test_rejects_nan():
+    with pytest.raises(ValueError, match="有限数值"):
+        normalize([1.0, float("nan")])
+
+
+def test_rejects_zero_sum():
+    with pytest.raises(ValueError, match="总和为 0"):
+        normalize([-1.0, 1.0])</code></pre>
+        </div>
+        <p>　　pytest 按命名规则发现 <code>test_*.py</code> 文件和以 <code>test_</code> 开头的函数。<code>assert</code> 检查正常结果，<code>pytest.raises</code> 检查预期异常是否发生。四个测试各自回答一个问题：</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的测试用例表">
+          <table>
+            <thead><tr><th>测试函数</th><th>输入</th><th>预期结果</th><th>防止什么问题</th></tr></thead>
+            <tbody>
+              <tr><td><code>test_normalize_values</code></td><td><code>[1.0, 3.0]</code></td><td><code>[0.25, 0.75]</code>，总和接近 1</td><td>正常计算逻辑被改错</td></tr>
+              <tr><td><code>test_empty_input</code></td><td><code>[]</code></td><td><code>[]</code></td><td>空输入触发异常</td></tr>
+              <tr><td><code>test_rejects_nan</code></td><td>包含 NaN</td><td>抛出“有限数值”异常</td><td>无效数值进入后续流程</td></tr>
+              <tr><td><code>test_rejects_zero_sum</code></td><td><code>[-1.0, 1.0]</code></td><td>抛出“总和为 0”异常</td><td>发生除以零</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>　　如果后续有人修改归一化逻辑，这些测试会重新检查同样的输入和预期。CI 的价值就是让这套检查在团队环境中重复发生，而不是只存在于你的电脑上。</p>
+
+        <h2 id="ch09-packaging">9.5 配置依赖与打包</h2>
+        <p>　　<code>pyproject.toml</code> 是 Python 项目配置文件。本例使用 setuptools 构建，并明确从 <code>src</code> 目录发现包：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制 pyproject 配置">复制</button>
+          <pre tabindex="0"><code class="language-toml">[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "algorithm-ci-demo"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]</code></pre>
+        </div>
+        <p>　　<code>build-system</code> 指定构建工具，<code>project</code> 指定包名、版本和 Python 要求，<code>packages.find</code> 告诉 setuptools 去哪里找包，<code>testpaths</code> 限定 pytest 的默认测试目录。</p>
+        <p>　　<code>requirements.txt</code> 使用下面的示例版本。固定版本是为了让演示可重复，团队项目应根据实际兼容性维护自己的版本：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制依赖清单">复制</button>
+          <pre tabindex="0"><code class="language-text">pytest==8.3.5
+ruff==0.11.2
+build==1.2.2.post1</code></pre>
+        </div>
+
+        <h2 id="ch09-local">9.6 在本地完整验证</h2>
+        <p>　　本地验证的目的，是在把代码交给团队之前，先亲手跑通 CI 稍后会重复执行的命令。建议在虚拟环境中操作，避免项目依赖污染系统 Python。</p>
+        <h3>第一步：创建并激活虚拟环境</h3>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制创建虚拟环境命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m venv .venv
+source .venv/Scripts/activate
+python --version</code></pre>
+        </div>
+        <ol>
+          <li><code>python -m venv .venv</code>：在项目目录创建名为 <code>.venv</code> 的独立 Python 环境。</li>
+          <li><code>source .venv/Scripts/activate</code>：在 Git Bash 中激活这个环境。macOS 或 Linux 通常使用 <code>.venv/bin/activate</code>。</li>
+          <li><code>python --version</code>：确认后续命令使用预期的 Python 版本。</li>
+        </ol>
+        <p>　　<code>.venv</code> 是本地环境目录，不属于项目源代码，不应提交到仓库。团队已有虚拟环境和忽略规则时，直接使用团队方式。</p>
+        <h3>第二步：安装项目并依次检查</h3>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制本地完整验证命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m pip install -r requirements.txt
+python -m pip install -e .
+python -m ruff check .
+python -m pytest --junitxml=report.xml
+python -m build</code></pre>
+        </div>
+        <ol>
+          <li><code>python -m pip install -r requirements.txt</code>：读取依赖清单，安装 pytest、Ruff 和 build。没有这一步，后面的命令可能提示找不到模块。</li>
+          <li><code>python -m pip install -e .</code>：以可编辑模式安装当前项目，让测试能从 <code>src</code> 布局中导入 <code>algorithm_demo</code>。</li>
+          <li><code>python -m ruff check .</code>：运行静态检查。它不调用归一化函数，而是检查代码中的基础问题。</li>
+          <li><code>python -m pytest --junitxml=report.xml</code>：发现并运行四个测试，同时生成 JUnit 测试报告。</li>
+          <li><code>python -m build</code>：读取打包配置，生成 wheel 和 sdist，验证项目能够形成交付物。</li>
+        </ol>
+        <p>　　成功后应看到类似的关键信息。耗时和安装日志可以不同：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制本地验证预期结果">复制</button>
+          <pre tabindex="0"><code class="language-text">All checks passed!
+4 passed
+Successfully built algorithm_ci_demo-0.1.0.tar.gz and algorithm_ci_demo-0.1.0-py3-none-any.whl</code></pre>
+        </div>
+        <p>　　到这里，你已经在本地证明了静态检查、四项测试和构建都能通过。<code>report.xml</code> 和 <code>dist/</code> 是本次运行生成的结果，不需要提交源代码仓库。任何一步失败，都应先解决再继续。</p>
+
+        <h2 id="ch09-yaml">9.7 理解 CI 配置与执行过程</h2>
+        <p>　　下面的 <code>.gitlab-ci.yml</code> 把本地验证拆成三个 Job。触发范围是合并请求、默认分支和版本标签。功能分支尚未创建合并请求时，本例不会因普通推送创建流水线。</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制完整 GitLab CI 配置">复制</button>
+          <pre tabindex="0"><code class="language-yaml">workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
+    - if: '$CI_COMMIT_TAG'
+
+stages: [check, test, build]
+
+default:
+  image: python:3.12
+  before_script:
+    - python -m pip install -r requirements.txt
+    - python -m pip install -e .
+
+variables:
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+cache:
+  key:
+    files: [requirements.txt]
+  paths: [.cache/pip]
+
+lint:
+  stage: check
+  script:
+    - python -m ruff check .
+
+unit_test:
+  stage: test
+  script:
+    - python -m pytest --junitxml=report.xml
+  artifacts:
+    when: always
+    paths: [report.xml]
+    reports:
+      junit: report.xml
+
+package:
+  stage: build
+  needs: [unit_test]
+  script:
+    - python -m build
+  artifacts:
+    paths: [dist/]
+    expire_in: 7 days</code></pre>
+        </div>
+        <p>　　<code>CI_DEFAULT_BRANCH</code> 是平台提供的默认分支名称，因此配置不用写死 <code>main</code>。<code>before_script</code> 为每个 Job 安装相同环境，三个 Job 分别负责静态检查、单元测试和构建。</p>
+        <p>　　测试报告成功或失败都会保存，构建 Job 等单元测试成功后执行。产物只保存七天，实际项目应按团队交付策略调整。合并前仍要通过 CI Lint 和真实流水线验证。</p>
+
+        <h3>三个 Job 实际怎样运行</h3>
+        <p>　　你在后面创建 MR 时，GitLab 发现流水线来源是 <code>merge_request_event</code>，第一条规则匹配，于是基于这次提交创建流水线。平台再按照阶段和依赖安排 Job，Runner 执行其中的命令。</p>
+        <figure>
+          <div class="svg-frame" role="img" aria-label="同一次提交包含功能、测试和 CI 配置，先完成本地验证并创建合并请求，再依次经过静态检查 Job、单元测试 Job 和构建 Job，最后把状态、测试报告和软件包带回合并请求。">
+            %%SVG_CASE_TRACE%%
+          </div>
+          <figcaption>图 2　同一次提交在本地与 CI 中的执行映射</figcaption>
+        </figure>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的 Job 执行过程表">
+          <table>
+            <thead><tr><th>执行顺序</th><th>Runner 做什么</th><th>成功后留下什么</th><th>失败时看什么</th></tr></thead>
+            <tbody>
+              <tr><td>1. <code>lint</code></td><td>拉取提交，准备 Python 3.12，安装依赖和项目，执行 Ruff</td><td>静态检查通过状态</td><td>具体文件、行号和检查规则</td></tr>
+              <tr><td>2. <code>unit_test</code></td><td>在新的任务环境中重新安装，执行 pytest</td><td>四个测试结果和 <code>report.xml</code></td><td>失败测试、输入、预期和实际异常</td></tr>
+              <tr><td>3. <code>package</code></td><td>等单元测试成功，执行构建</td><td><code>dist/</code> 中的 wheel 和 sdist</td><td>打包配置、缺失文件或构建错误</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>　　每个 Job 都有自己独立的准备过程。CI 不会使用你电脑里的 <code>.venv</code>，也不会自动拿到你本地生成的 <code>report.xml</code> 和 <code>dist/</code>。Runner 读取的是本次提交中的源代码、测试和配置，再重新生成这些结果。</p>
+        <p>　　pip 缓存只用于减少依赖下载时间。测试报告通过 Artifact 保存，软件包也通过 Artifact 保存。三者用途不同，不能混为一谈。</p>
+
+        <h2 id="ch09-submit">9.8 提交、推送并创建 MR</h2>
+        <p>　　本地验证通过后，把需要团队评审的源文件提交到功能分支。下面七行增加了提交前检查和提交编号查看，方便你理解每一步：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制实战提交命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">git status
+git diff
+git add pyproject.toml requirements.txt .gitlab-ci.yml src tests
+git diff --cached
+git commit -m "增加安全的归一化实现与 CI 检查"
+git log -1 --oneline
+git push -u origin feature/safe-normalize</code></pre>
+        </div>
+        <ol>
+          <li><code>git status</code>：查看修改和新增文件，确认没有误加入 <code>.venv</code>、报告或构建目录。</li>
+          <li><code>git diff</code>：检查尚未暂存的代码差异，确认功能修改与任务一致。</li>
+          <li><code>git add ...</code>：只暂存功能、测试、依赖、打包和 CI 配置这些源文件。</li>
+          <li><code>git diff --cached</code>：再次查看已经暂存、即将进入提交的内容。<code>--cached</code> 表示检查暂存区。</li>
+          <li><code>git commit ...</code>：创建本地提交。此时改动仍只在你的电脑上。</li>
+          <li><code>git log -1 --oneline</code>：查看刚创建的提交和缩短后的 SHA，后面可用它核对流水线版本。</li>
+          <li><code>git push -u origin feature/safe-normalize</code>：把提交推送到远程功能分支，并建立本地与远程分支的跟踪关系。</li>
+        </ol>
+        <p>　　命令执行完成后，转到 GitLab 网页创建 MR。可以对照 <a href="#ch02-mr">2.4 节的真实 MR 列表</a> 找到入口。</p>
+        <ol>
+          <li>进入项目，选择左侧“代码 &gt; 合并请求”，点击右上角“新建合并请求”。</li>
+          <li><code>Source branch</code> 选 <code>feature/safe-normalize</code>，<code>Target branch</code> 选团队默认分支 <code>main</code>，点击 <code>Compare branches and continue</code>。</li>
+          <li>标题填写“增加安全的归一化实现与 CI 检查”，<code>Description</code> 使用下方模板。按团队要求选择评审人，其他选项保持团队默认值。</li>
+          <li>点击 <code>Create merge request</code>。详情页的“概览”用于看状态与讨论，“变更”用于逐行看代码，“流水线”用于查看本次 MR 的检查。</li>
+          <li>核对页面中的源分支、目标分支与提交 SHA。发现选错目标分支或信息不完整时，先编辑 MR，不要重复创建。</li>
+        </ol>
+        <p>　　正文可以直接按下面的结构填写：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制合并请求说明模板">复制</button>
+          <pre tabindex="0"><code class="language-markdown">## 改动目的
+为归一化函数补充异常输入处理，避免无效结果和除以零。
+
+## 改动内容
+- 空列表返回空列表。
+- 拒绝 NaN、无穷和总和为零的输入。
+- 增加四项 pytest 测试。
+- 增加静态检查、测试和构建流水线。
+
+## 本地验证
+- Ruff 检查通过。
+- 四项 pytest 测试通过。
+- wheel 和 sdist 构建成功。
+
+## 注意事项
+- 本项目要求 Python 3.12 或更高版本。
+- 流水线产物保存七天。</code></pre>
+        </div>
+        <p>　　点击创建后，本例的 MR 触发规则生效。你接下来要查看的是这条 MR 对应的新流水线，而不是本地刚才的测试结果，也不是旧提交的历史流水线。</p>
+
+        <h2 id="ch09-debug">9.9 经历一次失败与修复</h2>
+        <p>　　下面用另一种情况演示失败路径：第一版函数漏掉了空列表处理，而你只运行了正常输入测试就提交，所以本地没有发现问题。创建 MR 后，<code>lint</code> 通过，但 <code>unit_test</code> 失败，依赖它的 <code>package</code> 不会执行。前文是顺利通过的完整路径，本节专门练习失败后的修复闭环。</p>
+        <h3>第一步：从 MR 找到失败 Job</h3>
+        <p>　　先核对流水线对应最新提交，再打开 <code>unit_test</code>。不要先打开已经通过的 <code>lint</code>，也不要只看流水线首页的“失败”两个字。</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的失败状态表">
+          <table>
+            <thead><tr><th>Job</th><th>此时状态</th><th>原因</th></tr></thead>
+            <tbody>
+              <tr><td><code>lint</code></td><td>success</td><td>静态检查没有发现基础代码问题</td></tr>
+              <tr><td><code>unit_test</code></td><td>failed</td><td>空输入测试没有得到预期结果</td></tr>
+              <tr><td><code>package</code></td><td>skipped</td><td><code>needs</code> 指定的单元测试没有成功</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>第二步：读懂关键日志</h3>
+        <p>　　日志格式会随工具版本变化，本例需要关注的关键内容如下：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制失败日志示例">复制</button>
+          <pre tabindex="0"><code class="language-text">tests/test_preprocess.py::test_empty_input FAILED
+E   ValueError: 总和为 0 时无法归一化
+=========================== short test summary info ===========================
+FAILED tests/test_preprocess.py::test_empty_input</code></pre>
+        </div>
+        <ol>
+          <li>第一行指出失败的测试是 <code>test_empty_input</code>，所以排查范围是空列表行为。</li>
+          <li><code>ValueError</code> 是实际异常。测试原本期待返回 <code>[]</code>，函数却继续求和并拒绝了零总和。</li>
+          <li>最后的汇总再次指出失败测试，真正需要修复的是空输入分支，不是 Runner，也不是 pytest。</li>
+        </ol>
+        <h3>第三步：在本地复现同一个失败</h3>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制单个失败测试命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m pytest tests/test_preprocess.py::test_empty_input -x</code></pre>
+        </div>
+        <p>　　文件路径后的 <code>::test_empty_input</code> 表示只运行这个测试，<code>-x</code> 表示遇到第一个失败就停止。能复现同样异常，说明你和 CI 在讨论同一个问题。</p>
+        <h3>第四步：修改代码并完整验证</h3>
+        <p>　　在计算总和之前补回下面的分支。测试已经准确描述了预期行为，因此这次只需要修改功能代码：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制空输入修复代码">复制</button>
+          <pre tabindex="0"><code class="language-python">if not values:
+    return []</code></pre>
+        </div>
+        <p>　　然后按顺序执行下面五行：</p>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制失败修复验证命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">python -m pytest tests/test_preprocess.py::test_empty_input
+python -m pytest
+git add src/algorithm_demo/preprocess.py
+git commit -m "修复空列表的归一化处理"
+git push</code></pre>
+        </div>
+        <ol>
+          <li><code>python -m pytest ...::test_empty_input</code>：先确认刚才失败的单个测试已经通过。</li>
+          <li><code>python -m pytest</code>：再运行全部测试，确认修复没有影响其他输入。</li>
+          <li><code>git add ...</code>：只暂存这次功能修复。</li>
+          <li><code>git commit ...</code>：创建一个新的修复提交，原提交仍保留在历史中。</li>
+          <li><code>git push</code>：推送到原功能分支。前面已建立跟踪关系，所以不需要再次写 <code>-u</code>。</li>
+        </ol>
+        <h3>第五步：确认原 MR 中的新结果</h3>
+        <p>　　MR 跟踪的是功能分支。分支出现新提交后，原 MR 会更新并触发新流水线，不需要删除或重新创建 MR。旧失败记录仍然保留，你需要核对新提交 SHA 和新流水线状态。</p>
+        <p>　　这次 <code>lint</code> 和 <code>unit_test</code> 通过后，<code>package</code> 才会运行。三个 Job 全部成功，只表示配置的自动检查已经通过，接下来还要完成团队评审。</p>
+
+        <h2 id="ch09-review-merge">9.10 评审、合并与获取结果</h2>
+        <h3>评审人员继续检查什么</h3>
+        <p>　　评审同事会看到同一份代码和 CI 结果，继续判断空列表返回空列表是否符合任务约定、异常提示是否清楚、测试是否覆盖关键输入。CI 无法替人判断这些设计与业务问题。</p>
+        <p>　　如果同事问“为什么空列表返回空列表，而不是抛出异常”，你可以在 MR 中回复任务约定，并指向 <code>test_empty_input</code>。讨论和修改都留在同一个 MR 中，下一位同事才能理解决策依据。</p>
+        <h3>谁执行合并</h3>
+        <p>　　当 CI 成功、评审批准且其他门禁满足后，由团队授权的人点击合并。某些项目允许提交者自己合并，另一些项目要求负责人合并，以团队权限为准。CI 默认不会因为你看到三个成功 Job 就自动合并。</p>
+        <h3>结果文件从哪里下载</h3>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的实战产物表">
+          <table>
+            <thead><tr><th>需要的内容</th><th>来自哪个 Job</th><th>文件</th><th>用途</th></tr></thead>
+            <tbody>
+              <tr><td>测试报告</td><td><code>unit_test</code></td><td><code>report.xml</code></td><td>查看本次测试通过和失败记录</td></tr>
+              <tr><td>可安装软件包</td><td><code>package</code></td><td><code>dist/*.whl</code></td><td>安装或交给后续发布流程</td></tr>
+              <tr><td>源代码发行包</td><td><code>package</code></td><td><code>dist/*.tar.gz</code></td><td>按团队方式归档或分发源代码</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>　　在 MR 的流水线区域进入最新流水线，点击 <code>package</code> 这个 Job。详情页的 <code>Download</code> 用于下载产物压缩包，<code>Browse</code> 用于先浏览包内文件。压缩包里的 <code>dist/</code> 才对应上表中的 wheel 和源代码发行包。需要测试报告时，打开 <code>unit_test</code> 的产物，而不是 <code>package</code>。</p>
+        <p>　　也可以从项目左侧“构建 &gt; 产物”进入，按 Job 找到文件。下载前核对提交和 Job，避免拿到旧流水线的结果。这里的文件由 Runner 重新生成，不是你本地目录被直接上传。</p>
+        <h3>合并后同步自己的电脑</h3>
+        <div class="code-wrap">
+          <button class="copy-button" type="button" aria-label="复制合并后同步命令">复制</button>
+          <pre tabindex="0"><code class="language-bash">git switch main
+git pull origin main
+git branch -d feature/safe-normalize</code></pre>
+        </div>
+        <ol>
+          <li><code>git switch main</code>：从功能分支切回本地主分支。</li>
+          <li><code>git pull origin main</code>：把团队远程主分支的最新状态同步到本地，包括刚合并的改动。</li>
+          <li><code>git branch -d feature/safe-normalize</code>：删除已经不再需要的本地功能分支，不会删除远程分支。</li>
+        </ol>
+
+        <h2 id="ch09-checklist">9.11 全链路回顾与操作清单</h2>
+        <p>　　把整个过程压缩成下表，就能看清每一步的责任人和结果去向：</p>
+        <div class="table-wrap" tabindex="0" aria-label="可横向滚动的全链路回顾表">
+          <table>
+            <thead><tr><th>阶段</th><th>谁执行</th><th>输入与动作</th><th>结果去了哪里</th></tr></thead>
+            <tbody>
+              <tr><td>创建分支</td><td>你</td><td>从最新主分支创建功能分支</td><td>本地 Git 工作区</td></tr>
+              <tr><td>写功能与测试</td><td>你</td><td>实现规则，用测试描述预期</td><td>功能分支上的源文件</td></tr>
+              <tr><td>本地验证</td><td>你与本地工具</td><td>安装项目，运行 Ruff、pytest 和构建</td><td>本地状态、报告和软件包</td></tr>
+              <tr><td>提交与推送</td><td>你和 Git</td><td>暂存源文件，创建提交并推送</td><td>远程功能分支</td></tr>
+              <tr><td>创建 MR</td><td>你与 GitLab</td><td>选择源分支和目标分支，说明改动</td><td>团队协作页面</td></tr>
+              <tr><td>自动检查</td><td>GitLab 与 Runner</td><td>按配置执行三个 Job</td><td>MR 状态、日志和 Artifact</td></tr>
+              <tr><td>失败修复</td><td>你</td><td>读日志，本地复现，追加修复提交</td><td>原 MR 的新流水线</td></tr>
+              <tr><td>评审与合并</td><td>评审同事与合并负责人</td><td>复查代码，满足门禁后合并</td><td>团队默认主分支</td></tr>
+              <tr><td>同步与交付</td><td>你和平台</td><td>下载产物，拉取主分支，整理分支</td><td>本地最新代码和交付文件</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>开始一项改动</h3>
+        <ul>
+          <li>同步默认分支，确认工作区状态，创建含义明确的功能分支。</li>
+          <li>同时修改功能与对应测试，避免提交个人文件、数据和密钥。</li>
+          <li>在本地运行相关检查，提交前查看变更范围。</li>
+        </ul>
+        <h3>修改 CI 配置</h3>
+        <ul>
+          <li>阅读完整配置与引入模板，确认触发、依赖、路径和权限。</li>
+          <li>小范围修改，先做配置检查，再通过真实流水线验证。</li>
+          <li>像功能代码一样提交评审，不直接覆盖团队配置。</li>
+        </ul>
+        <h3>处理失败</h3>
+        <ul>
+          <li>核对提交，打开失败 Job，找到第一条有效错误。</li>
+          <li>区分代码、依赖、数据、配置和 Runner 问题，每次验证一个主要假设。</li>
+          <li>本地复现修复后追加提交，推送并检查新流水线。</li>
+        </ul>
+        <h3>合并与沟通</h3>
+        <ul>
+          <li>在 PR/MR 中写清目的、改动、验证方式和注意事项。</li>
+          <li>反馈问题时提供链接、提交 SHA、错误、复现命令和已尝试操作。</li>
+          <li>满足 CI 与评审要求后合并，再同步本地主分支。</li>
+        </ul>
+
+        <h2 id="ch09-summary">本章小结</h2>
+        <p>　　这个案例包含了团队协作的最小完整链路：功能与测试一起准备，本地先验证，CI 在 Runner 中重复执行，失败由提交者修复，评审与检查通过后合并，产物按配置交付。</p>
+        <p>　　掌握这条链路后，面对真实项目时可以先找到对应文件和命令，再沿用团队现有规则操作。不要追求一次理解所有平台功能，能稳定完成提交、验证、修复和沟通，就已经可以参与日常协作。</p>
+        <div class="chapter-end">第 9 章完，全手册完。返回 <a href="#chapter-1">第 1 章</a> 复习，或按本章清单开始一次实际改动。</div>
+      </article>
+    </div>
+  </main>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const themeMeta = document.querySelector('meta[name="color-scheme"]');
+      const themeToggle = document.querySelector('.theme-toggle');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+      function getStoredTheme() {
+        try {
+          const value = localStorage.getItem('cicd-theme');
+          return value === 'light' || value === 'dark' ? value : null;
+        } catch (error) { return null; }
+      }
+      function resolvedTheme() {
+        return getStoredTheme() || (systemDark.matches ? 'dark' : 'light');
+      }
+      function syncTheme() {
+        const stored = getStoredTheme();
+        const resolved = resolvedTheme();
+        root.dataset.theme = resolved;
+        themeMeta.content = stored || 'light dark';
+        themeToggle.textContent = resolved === 'dark' ? '浅色显示' : '深色显示';
+        themeToggle.setAttribute('aria-pressed', String(resolved === 'dark'));
+      }
+      themeToggle.addEventListener('click', () => {
+        const target = resolvedTheme() === 'dark' ? 'light' : 'dark';
+        try {
+          if (target === (systemDark.matches ? 'dark' : 'light')) localStorage.removeItem('cicd-theme');
+          else localStorage.setItem('cicd-theme', target);
+        } catch (error) {}
+        syncTheme();
+      });
+      systemDark.addEventListener('change', syncTheme);
+      window.addEventListener('storage', event => {
+        if (event.key === 'cicd-theme') syncTheme();
+      });
+      syncTheme();
+
+      const body = document.body;
+      const sidebar = document.getElementById('sidebar');
+      const main = document.getElementById('main');
+      const toggle = document.querySelector('.nav-toggle');
+      const backdrop = document.querySelector('.backdrop');
+      const mobile = window.matchMedia('(max-width: 860px)');
+      let lastFocus = null;
+      let desktopHidden = false;
+      try { desktopHidden = localStorage.getItem('cicd-nav') === 'hidden'; } catch (error) {}
+
+      function syncNavLabel() {
+        const expanded = mobile.matches ? body.classList.contains('nav-open') : !body.classList.contains('nav-hidden');
+        toggle.textContent = expanded ? '收起目录' : '展开目录';
+        toggle.setAttribute('aria-expanded', String(expanded));
+      }
+      function closeMobileNav(returnFocus = true) {
+        body.classList.remove('nav-open');
+        sidebar.inert = true;
+        main.inert = false;
+        syncNavLabel();
+        if (returnFocus && lastFocus) lastFocus.focus();
+      }
+      function openMobileNav() {
+        lastFocus = document.activeElement;
+        body.classList.add('nav-open');
+        sidebar.inert = false;
+        main.inert = true;
+        syncNavLabel();
+        sidebar.querySelector('a').focus();
+      }
+      function syncLayout() {
+        if (mobile.matches) {
+          body.classList.remove('nav-hidden');
+          closeMobileNav(false);
+        } else {
+          body.classList.remove('nav-open');
+          body.classList.toggle('nav-hidden', desktopHidden);
+          sidebar.inert = desktopHidden;
+          main.inert = false;
+          syncNavLabel();
+        }
+      }
+      toggle.addEventListener('click', () => {
+        if (mobile.matches) {
+          if (body.classList.contains('nav-open')) closeMobileNav();
+          else openMobileNav();
+        } else {
+          desktopHidden = !desktopHidden;
+          body.classList.toggle('nav-hidden', desktopHidden);
+          sidebar.inert = desktopHidden;
+          try { localStorage.setItem('cicd-nav', desktopHidden ? 'hidden' : 'shown'); } catch (error) {}
+          syncNavLabel();
+        }
+      });
+      backdrop.addEventListener('click', () => closeMobileNav());
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && body.classList.contains('nav-open')) closeMobileNav();
+      });
+      sidebar.addEventListener('click', event => {
+        if (mobile.matches && event.target.closest('a')) closeMobileNav(false);
+      });
+      mobile.addEventListener('change', syncLayout);
+      syncLayout();
+
+      const progress = document.querySelector('.progress');
+      let scheduled = false;
+      function updateProgress() {
+        const distance = document.documentElement.scrollHeight - window.innerHeight;
+        const ratio = distance > 0 ? Math.min(window.scrollY / distance, 1) : 0;
+        progress.style.width = `${ratio * 100}%`;
+        scheduled = false;
+      }
+      window.addEventListener('scroll', () => {
+        if (!scheduled) {
+          scheduled = true;
+          requestAnimationFrame(updateProgress);
+        }
+      }, { passive: true });
+      updateProgress();
+
+      const sectionLinks = [...document.querySelectorAll('.section-nav a')];
+      const sections = sectionLinks.map(link => document.querySelector(link.hash)).filter(Boolean);
+      const observer = new IntersectionObserver(entries => {
+        const visible = entries.filter(entry => entry.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+        if (!visible) return;
+        const chapter = visible.target.closest('article');
+        if (chapter) {
+          const number = chapter.id.split('-')[1];
+          document.querySelector('.breadcrumb').textContent = `CI/CD 实用入门　/　第 ${number} 章`;
+        }
+        sectionLinks.forEach(link => {
+          const current = link.hash === `#${visible.target.id}`;
+          link.classList.toggle('active', current);
+          if (current) link.setAttribute('aria-current', 'location');
+          else link.removeAttribute('aria-current');
+        });
+      }, { rootMargin: '-12% 0px -72% 0px', threshold: 0 });
+      document.querySelectorAll('article > h1').forEach(heading => observer.observe(heading));
+      sections.forEach(section => observer.observe(section));
+
+      async function copyText(text) {
+        const area = document.createElement('textarea');
+        area.value = text;
+        area.style.position = 'fixed';
+        area.style.opacity = '0';
+        document.body.appendChild(area);
+        area.select();
+        const copied = document.execCommand('copy');
+        area.remove();
+        if (!copied) throw new Error('复制命令未成功');
+      }
+      document.querySelectorAll('.copy-button').forEach(button => {
+        button.addEventListener('click', async () => {
+          const code = button.parentElement.querySelector('code').textContent;
+          try {
+            await copyText(code);
+            button.textContent = '已复制';
+          } catch (error) {
+            button.textContent = '请手动复制';
+          }
+          window.setTimeout(() => { button.textContent = '复制'; }, 1600);
+        });
+      });
+
+      const dialog = document.getElementById('zoom-dialog');
+      const stage = document.getElementById('zoom-stage');
+      const zoomValue = document.getElementById('zoom-value');
+      const zoomTitle = document.getElementById('zoom-title');
+      let diagram = null;
+      let baseWidth = 1200;
+      let baseHeight = 600;
+      let scale = 1;
+      let drag = null;
+
+      function centerDiagram() {
+        requestAnimationFrame(() => {
+          stage.scrollLeft = Math.max(0, (stage.scrollWidth - stage.clientWidth) / 2);
+          stage.scrollTop = Math.max(0, (stage.scrollHeight - stage.clientHeight) / 2);
+        });
+      }
+      function setZoom(next, preserveCenter = true) {
+        const ratioX = stage.scrollWidth ? (stage.scrollLeft + stage.clientWidth / 2) / stage.scrollWidth : .5;
+        const ratioY = stage.scrollHeight ? (stage.scrollTop + stage.clientHeight / 2) / stage.scrollHeight : .5;
+        const maxStageHeight = window.innerHeight * .92 - 58;
+        scale = Math.min(5, Math.max(.1, next));
+        diagram.style.width = `${baseWidth * scale}px`;
+        diagram.style.height = `${baseHeight * scale}px`;
+        stage.style.height = `${Math.min(baseHeight * scale + 24, maxStageHeight)}px`;
+        zoomValue.textContent = `${Math.round(scale * 100)}%`;
+        if (preserveCenter) {
+          requestAnimationFrame(() => {
+            stage.scrollLeft = ratioX * stage.scrollWidth - stage.clientWidth / 2;
+            stage.scrollTop = ratioY * stage.scrollHeight - stage.clientHeight / 2;
+          });
+        } else centerDiagram();
+      }
+      function resetZoom() {
+        const maxStageHeight = window.innerHeight * .92 - 58;
+        const fit = Math.min((stage.clientWidth - 24) / baseWidth, (maxStageHeight - 24) / baseHeight, 1);
+        setZoom(Math.max(.1, fit), false);
+      }
+      function openDiagram(frame) {
+        const source = frame.querySelector('svg, img');
+        const isScreenshot = source.tagName.toLowerCase() === 'img';
+        diagram = source.cloneNode(true);
+        baseWidth = isScreenshot ? (source.naturalWidth || Number(source.getAttribute('width'))) : source.viewBox.baseVal.width || 1200;
+        baseHeight = isScreenshot ? (source.naturalHeight || Number(source.getAttribute('height'))) : source.viewBox.baseVal.height || 600;
+        if (isScreenshot) {
+          diagram.setAttribute('draggable', 'false');
+        } else {
+          diagram.setAttribute('role', 'img');
+          diagram.setAttribute('aria-label', frame.getAttribute('aria-label') || '流程图');
+        }
+        stage.replaceChildren(diagram);
+        zoomTitle.textContent = frame.closest('figure').querySelector('figcaption').textContent;
+        dialog.showModal();
+        resetZoom();
+      }
+      document.querySelectorAll('.svg-frame, .screenshot-frame').forEach(frame => {
+        const button = document.createElement('button');
+        const caption = frame.closest('figure').querySelector('figcaption').textContent;
+        button.type = 'button';
+        button.className = 'image-open';
+        button.setAttribute('aria-label', `单击放大${caption}`);
+        frame.appendChild(button);
+        button.addEventListener('click', () => openDiagram(frame));
+      });
+      document.getElementById('zoom-in').addEventListener('click', () => setZoom(scale * 1.25));
+      document.getElementById('zoom-out').addEventListener('click', () => setZoom(scale / 1.25));
+      document.getElementById('zoom-reset').addEventListener('click', resetZoom);
+      stage.addEventListener('wheel', event => {
+        if (!diagram) return;
+        event.preventDefault();
+        setZoom(scale * (event.deltaY < 0 ? 1.1 : .9));
+      }, { passive: false });
+      stage.addEventListener('pointerdown', event => {
+        if (!diagram || event.button !== 0 || !event.isPrimary) return;
+        drag = { x: event.clientX, y: event.clientY, left: stage.scrollLeft, top: stage.scrollTop };
+        stage.classList.add('dragging');
+        stage.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      });
+      stage.addEventListener('pointermove', event => {
+        if (!drag) return;
+        stage.scrollLeft = drag.left - (event.clientX - drag.x);
+        stage.scrollTop = drag.top - (event.clientY - drag.y);
+      });
+      function stopDrag() {
+        drag = null;
+        stage.classList.remove('dragging');
+      }
+      stage.addEventListener('pointerup', stopDrag);
+      stage.addEventListener('pointercancel', stopDrag);
+      dialog.addEventListener('close', () => {
+        stopDrag();
+        stage.replaceChildren();
+        diagram = null;
+      });
+      if (!('closedBy' in HTMLDialogElement.prototype)) {
+        const outside = event => {
+          const rect = dialog.getBoundingClientRect();
+          return event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+        };
+        let pressedOutside = false;
+        dialog.addEventListener('pointerdown', event => { pressedOutside = outside(event); });
+        dialog.addEventListener('pointerup', event => {
+          if (pressedOutside && outside(event)) dialog.close();
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

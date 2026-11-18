@@ -1,0 +1,28 @@
+direction: right
+*.style.stroke: "#202020"
+*.style.font-color: "#202020"
+classes: {
+  box: {
+    style: {
+      fill: "#ffffff"
+      stroke: "#202020"
+      font-color: "#202020"
+      border-radius: 6
+      font-size: 24
+    }
+  }
+}
+a: "你：\n修改算法并推送代码" {class: box}
+b: "Git 仓库：\n保存提交与分支" {class: box}
+c: "CI 平台：\n创建一条流水线" {class: box}
+d: "Runner：\n检查、测试、构建" {class: box}
+e: "合并请求：\n显示结果与报告" {class: box}
+a -> b
+b -> c
+c -> d
+d -> e
+e -> a: "失败" {style: {stroke: "#202020"; stroke-dash: 4; font-color: "#202020"}}
+(a -> b)[0].style.stroke: "#202020"
+(b -> c)[0].style.stroke: "#202020"
+(c -> d)[0].style.stroke: "#202020"
+(d -> e)[0].style.stroke: "#202020"
