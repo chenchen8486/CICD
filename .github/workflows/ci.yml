@@ -1,0 +1,58 @@
+# 显示在 GitHub Actions 页面
+name: CI
+
+# 哪些事件触发工作流
+on:
+  # main 收到新提交，例如 PR 合并后
+  push:
+    branches: [main]
+  # 创建 PR，或向 PR 分支追加提交
+  pull_request:
+  # 允许在 Actions 页面手动运行
+  workflow_dispatch:
+
+# 本工作流只读取代码，不修改仓库
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    name: 测试并构建
+    # GitHub 提供全新 Ubuntu 环境
+    runs-on: ubuntu-latest
+
+    steps:
+      # 下载当前提交中的代码
+      - name: 检出代码
+        uses: actions/checkout@v7
+
+      # 安装指定 Python 版本
+      - name: 准备 Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      # 与本地相同的测试命令
+      - name: 运行单元测试
+        run: python -m unittest discover -s tests -v
+
+      # 与本地相同的构建命令
+      - name: 构建程序
+        run: python -m zipapp demo -m "main:main" -o calculator.pyz
+
+      # 实际运行构建产物，并检查输出
+      - name: 验证构建产物
+        run: |
+          output=$(python calculator.pyz 2 3)
+          test "$output" = "5"
+
+          output=$(python calculator.pyz 10 4 --subtract)
+          test "$output" = "6"
+
+      # 保存构建产物，可在 Actions 页面下载
+      - name: 保存 Artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: calculator
+          path: calculator.pyz
+          retention-days: 7
